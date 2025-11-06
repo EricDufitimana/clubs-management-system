@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* MUI Theme Variables for Tailwind */
+@layer base {
+  :root {
+    /* Primary Colors */
+    --mui-primary-lighter: #D0ECFE;
+    --mui-primary-light: #73BAFB;
+    --mui-primary-main: #1877F2;
+    --mui-primary-dark: #0C44AE;
+    --mui-primary-darker: #042174;
+    --mui-primary-contrast: #FFFFFF;
+
+    /* Secondary Colors */
+    --mui-secondary-lighter: #EFD6FF;
+    --mui-secondary-light: #C684FF;
+    --mui-secondary-main: #8E33FF;
+    --mui-secondary-dark: #5119B7;
+    --mui-secondary-darker: #27097A;
+    --mui-secondary-contrast: #FFFFFF;
+
+    /* Info Colors */
+    --mui-info-lighter: #CAFDF5;
+    --mui-info-light: #61F3F3;
+    --mui-info-main: #00B8D9;
+    --mui-info-dark: #006C9C;
+    --mui-info-darker: #003768;
+    --mui-info-contrast: #FFFFFF;
+
+    /* Success Colors */
+    --mui-success-lighter: #D3FCD2;
+    --mui-success-light: #77ED8B;
+    --mui-success-main: #22C55E;
+    --mui-success-dark: #118D57;
+    --mui-success-darker: #065E49;
+    --mui-success-contrast: #ffffff;
+
+    /* Warning Colors */
+    --mui-warning-lighter: #FFF5CC;
+    --mui-warning-light: #FFD666;
+    --mui-warning-main: #FFAB00;
+    --mui-warning-dark: #B76E00;
+    --mui-warning-darker: #7A4100;
+    --mui-warning-contrast: #1C252E;
+
+    /* Error Colors */
+    --mui-error-lighter: #FFE9D5;
+    --mui-error-light: #FFAC82;
+    --mui-error-main: #FF5630;
+    --mui-error-dark: #B71D18;
+    --mui-error-darker: #7A0916;
+    --mui-error-contrast: #FFFFFF;
+
+    /* Grey Colors */
+    --mui-grey-50: #FCFDFD;
+    --mui-grey-100: #F9FAFB;
+    --mui-grey-200: #F4F6F8;
+    --mui-grey-300: #DFE3E8;
+    --mui-grey-400: #C4CDD5;
+    --mui-grey-500: #919EAB;
+    --mui-grey-600: #637381;
+    --mui-grey-700: #454F5B;
+    --mui-grey-800: #1C252E;
+    --mui-grey-900: #141A21;
+
+    /* Common Colors */
+    --mui-common-black: #000000;
+    --mui-common-white: #FFFFFF;
+
+    /* Background Colors */
+    --mui-background-paper: #FFFFFF;
+    --mui-background-default: #F9FAFB;
+    --mui-background-neutral: #F4F6F8;
+
+    /* Text Colors */
+    --mui-text-primary: #1C252E;
+    --mui-text-secondary: #637381;
+    --mui-text-disabled: #919EAB;
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --border-color: hsl(var(--border));
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+  }
+
+  .header-1 {
+    @apply text-[42px] font-medium text-mui-primary text-center;
+  }
+  .paragraph-1{
+    @apply text-[14px] font-normal text-mui-grey-700 text-center
+  }
+}

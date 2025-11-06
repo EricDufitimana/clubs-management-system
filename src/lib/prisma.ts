@@ -1,0 +1,25 @@
+// lib/prisma.ts
+import { PrismaClient } from '@prisma/client'
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined
+}
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient({
+  log: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : ['error'],
+  errorFormat: 'pretty',
+})
+
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+// Handle connection errors gracefully
+prisma.$on('error' as never, (e: any) => {
+  console.error('[PRISMA] Database error:', e)
+})
+
+// Cleanup on process termination
+if (typeof process !== 'undefined') {
+  process.on('beforeExit', async () => {
+    await prisma.$disconnect()
+  })
+}

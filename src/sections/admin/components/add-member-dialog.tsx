@@ -1,0 +1,382 @@
+'use client';
+
+import { useState, useCallback, useEffect } from 'react';
+
+import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
+import List from '@mui/material/List';
+import Chip from '@mui/material/Chip';
+import Avatar from '@mui/material/Avatar';
+import TextField from '@mui/material/TextField';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import ListItem from '@mui/material/ListItem';
+import ListItemText from '@mui/material/ListItemText';
+import ListItemButton from '@mui/material/ListItemButton';
+import CircularProgress from '@mui/material/CircularProgress';
+import InputAdornment from '@mui/material/InputAdornment';
+import Checkbox from '@mui/material/Checkbox';
+import Typography from '@mui/material/Typography';
+import Alert from '@mui/material/Alert';
+
+import { Label } from 'src/components/label';
+import { Iconify } from 'src/components/iconify';
+import { getAvatarUrl } from 'src/utils/get-avatar';
+import { getGradeColor, getCombinationColor, formatCombination } from 'src/sections/user/utils/colors';
+
+// ----------------------------------------------------------------------
+
+type Student = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  grade?: string;
+  combination?: string;
+  gender?: 'male' | 'female';
+};
+
+type AddMemberDialogProps = {
+  open: boolean;
+  onClose: () => void;
+  onAdd: () => void;
+  onError?: (error: string) => void;
+  clubId?: string;
+  preloadedStudents?: Student[];
+};
+
+export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preloadedStudents }: AddMemberDialogProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [students, setStudents] = useState<Student[]>(preloadedStudents || []);
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  const [existingMembers, setExistingMembers] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+
+  // Fetch students only if not preloaded
+  const fetchStudents = useCallback(async () => {
+    if (!open || preloadedStudents) return;
+    
+    setFetching(true);
+    try {
+      const response = await fetch('/api/students/fetch');
+      if (!response.ok) {
+        throw new Error('Failed to fetch students');
+      }
+      const data = await response.json();
+      
+      const studentList: Student[] = data.map((student: any) => ({
+        id: student.id,
+        first_name: student.first_name,
+        last_name: student.last_name,
+        grade: student.grade,
+        combination: student.combination,
+        gender: student.gender,
+      }));
+      
+      setStudents(studentList);
+    } catch (error) {
+      console.error('[ADD_MEMBER_DIALOG] Error fetching students:', error);
+      if (onError) {
+        onError('Failed to load students');
+      }
+    } finally {
+      setFetching(false);
+    }
+  }, [open, onError, preloadedStudents]);
+
+  // Update students when preloadedStudents prop changes
+  useEffect(() => {
+    if (preloadedStudents && preloadedStudents.length > 0) {
+      setStudents(preloadedStudents);
+    }
+  }, [preloadedStudents]);
+
+  // Fetch existing members
+  const fetchExistingMembers = useCallback(async () => {
+    if (!open || !clubId) return;
+    
+    try {
+      const response = await fetch(`/api/club/members/check?club_id=${clubId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setExistingMembers(new Set(data.memberIds || []));
+      }
+    } catch (error) {
+      console.error('[ADD_MEMBER_DIALOG] Error fetching existing members:', error);
+    }
+  }, [open, clubId]);
+
+  useEffect(() => {
+    if (open) {
+      fetchStudents();
+      if (clubId) {
+        fetchExistingMembers();
+      }
+      setSearchQuery('');
+      setSelectedStudents(new Set());
+      setMessage(null);
+    }
+  }, [open, fetchStudents, fetchExistingMembers, clubId]);
+
+  const handleToggleStudent = useCallback((studentId: string) => {
+    setSelectedStudents(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(studentId)) {
+        newSet.delete(studentId);
+      } else {
+        newSet.add(studentId);
+      }
+      return newSet;
+    });
+    setMessage(null);
+  }, []);
+
+  const handleSelectAll = useCallback(() => {
+    const filtered = filteredStudents.filter(s => !existingMembers.has(s.id));
+    const allSelected = filtered.every(s => selectedStudents.has(s.id));
+    
+    if (allSelected) {
+      // Deselect all filtered
+      setSelectedStudents(prev => {
+        const newSet = new Set(prev);
+        filtered.forEach(s => newSet.delete(s.id));
+        return newSet;
+      });
+    } else {
+      // Select all filtered
+      setSelectedStudents(prev => {
+        const newSet = new Set(prev);
+        filtered.forEach(s => newSet.add(s.id));
+        return newSet;
+      });
+    }
+    setMessage(null);
+  }, []);
+
+  const handleAddMembers = useCallback(async () => {
+    if (selectedStudents.size === 0 || !clubId) {
+      setMessage({ type: 'error', text: 'Please select at least one student' });
+      return;
+    }
+
+    setAdding(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/club/members/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentIds: Array.from(selectedStudents),
+          clubId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add members');
+      }
+
+      if (data.success) {
+        setMessage({ 
+          type: 'success', 
+          text: data.message || `Successfully added ${data.added?.length || 0} student(s) to the club` 
+        });
+        
+        // Update existing members
+        if (data.added) {
+          setExistingMembers(prev => {
+            const newSet = new Set(prev);
+            data.added.forEach((id: string) => newSet.add(id));
+            return newSet;
+          });
+        }
+
+        // Clear selection after a delay
+        setTimeout(() => {
+          setSelectedStudents(new Set());
+          onAdd();
+          onClose();
+        }, 1500);
+      }
+    } catch (error: any) {
+      console.error('[ADD_MEMBER_DIALOG] Error adding members:', error);
+      setMessage({ type: 'error', text: error.message || 'Failed to add members' });
+      if (onError) {
+        onError(error.message || 'Failed to add members');
+      }
+    } finally {
+      setAdding(false);
+    }
+  }, [selectedStudents, clubId, onAdd, onClose, onError]);
+
+  const handleClose = useCallback(() => {
+    if (!adding) {
+      setSearchQuery('');
+      setSelectedStudents(new Set());
+      setMessage(null);
+      onClose();
+    }
+  }, [adding, onClose]);
+
+  // Filter students based on search query
+  const filteredStudents = students.filter(student => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();
+    return fullName.includes(query) || 
+           student.grade?.toLowerCase().includes(query) ||
+           student.combination?.toLowerCase().includes(query);
+  });
+
+  const availableStudents = filteredStudents.filter(s => !existingMembers.has(s.id));
+  const filteredSelected = availableStudents.filter(s => selectedStudents.has(s.id));
+
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <DialogTitle>Add Club Members</DialogTitle>
+      <DialogContent>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+          {/* Search */}
+          <TextField
+            fullWidth
+            placeholder="Search students by name, grade, or combination..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                </InputAdornment>
+              ),
+            }}
+            disabled={fetching || adding}
+          />
+
+          {/* Message */}
+          {message && (
+            <Alert severity={message.type} onClose={() => setMessage(null)}>
+              {message.text}
+            </Alert>
+          )}
+
+          {/* Select All */}
+          {availableStudents.length > 0 && (
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="body2" color="text.secondary">
+                {filteredSelected.length} of {availableStudents.length} selected
+              </Typography>
+              <Button
+                size="small"
+                onClick={handleSelectAll}
+                disabled={fetching || adding}
+              >
+                {filteredSelected.length === availableStudents.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </Box>
+          )}
+
+          {/* Loading */}
+          {fetching ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <>
+              {/* Students List */}
+              <Box sx={{ maxHeight: 400, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
+                <List dense>
+                  {filteredStudents.length === 0 ? (
+                    <ListItem>
+                      <ListItemText 
+                        primary="No students found"
+                        secondary={searchQuery ? 'Try adjusting your search query' : 'No students available'}
+                      />
+                    </ListItem>
+                  ) : (
+                    filteredStudents.map((student) => {
+                      const isSelected = selectedStudents.has(student.id);
+                      const isExistingMember = existingMembers.has(student.id);
+                      const avatarUrl = getAvatarUrl(student.gender, BigInt(student.id));
+
+                      return (
+                        <ListItem
+                          key={student.id}
+                          disablePadding
+                          secondaryAction={
+                            isExistingMember && (
+                              <Chip label="Member" size="small" color="success" />
+                            )
+                          }
+                        >
+                          <ListItemButton
+                            onClick={() => !isExistingMember && handleToggleStudent(student.id)}
+                            disabled={isExistingMember || adding}
+                            selected={isSelected}
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              disabled={isExistingMember}
+                              sx={{ mr: 1 }}
+                            />
+                            <Avatar src={avatarUrl} sx={{ mr: 2, width: 40, height: 40 }} />
+                            <ListItemText
+                              primary={`${student.first_name} ${student.last_name}`}
+                              secondary={
+                                <Box component="span" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
+                                  {student.grade && (
+                                    <Label color={getGradeColor(student.grade)} variant="soft">
+                                      {student.grade}
+                                    </Label>
+                                  )}
+                                  {student.combination && (
+                                    <Label color={getCombinationColor(student.combination)} variant="soft">
+                                      {formatCombination(student.combination)}
+                                    </Label>
+                                  )}
+                                </Box>
+                              }
+                            />
+                          </ListItemButton>
+                        </ListItem>
+                      );
+                    })
+                  )}
+                </List>
+              </Box>
+
+              {/* Info */}
+              {existingMembers.size > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  {existingMembers.size} student(s) are already members of this club
+                </Typography>
+              )}
+            </>
+          )}
+        </Box>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} disabled={adding}>
+          Cancel
+        </Button>
+        <Button
+          onClick={handleAddMembers}
+          variant="contained"
+          disabled={selectedStudents.size === 0 || !clubId || adding}
+          startIcon={adding ? <CircularProgress size={20} color="inherit" /> : null}
+        >
+          {adding ? 'Adding...' : `Add ${selectedStudents.size} Member(s)`}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+

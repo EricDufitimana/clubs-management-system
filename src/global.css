@@ -1,0 +1,140 @@
+/** **************************************
+* Tailwind CSS
+*************************************** */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/** **************************************
+* Fonts: app
+*************************************** */
+@import '@fontsource-variable/dm-sans';
+
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow/600.css';
+@import '@fontsource/barlow/700.css';
+@import '@fontsource/barlow/800.css';
+
+/** **************************************
+* Plugins
+*************************************** */
+/* scrollbar */
+@import './components/scrollbar/styles.css';
+
+/* chart */
+@import './components/chart/styles.css';
+
+/** **************************************
+* Baseline
+*************************************** */
+html {
+  height: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+body,
+#root,
+#root__layout {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 100%;
+  flex-direction: column;
+}
+img {
+  max-width: 100%;
+  vertical-align: middle;
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: none;
+}
+input[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+input[type='number']::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+/** **************************************
+* MUI Theme Variables for Tailwind
+*************************************** */
+@layer base {
+  :root {
+    /* Primary Colors */
+    --mui-primary-lighter: #D0ECFE;
+    --mui-primary-light: #73BAFB;
+    --mui-primary-main: #1877F2;
+    --mui-primary-dark: #0C44AE;
+    --mui-primary-darker: #042174;
+    --mui-primary-contrast: #FFFFFF;
+
+    /* Secondary Colors */
+    --mui-secondary-lighter: #EFD6FF;
+    --mui-secondary-light: #C684FF;
+    --mui-secondary-main: #8E33FF;
+    --mui-secondary-dark: #5119B7;
+    --mui-secondary-darker: #27097A;
+    --mui-secondary-contrast: #FFFFFF;
+
+    /* Info Colors */
+    --mui-info-lighter: #CAFDF5;
+    --mui-info-light: #61F3F3;
+    --mui-info-main: #00B8D9;
+    --mui-info-dark: #006C9C;
+    --mui-info-darker: #003768;
+    --mui-info-contrast: #FFFFFF;
+
+    /* Success Colors */
+    --mui-success-lighter: #D3FCD2;
+    --mui-success-light: #77ED8B;
+    --mui-success-main: #22C55E;
+    --mui-success-dark: #118D57;
+    --mui-success-darker: #065E49;
+    --mui-success-contrast: #ffffff;
+
+    /* Warning Colors */
+    --mui-warning-lighter: #FFF5CC;
+    --mui-warning-light: #FFD666;
+    --mui-warning-main: #FFAB00;
+    --mui-warning-dark: #B76E00;
+    --mui-warning-darker: #7A4100;
+    --mui-warning-contrast: #1C252E;
+
+    /* Error Colors */
+    --mui-error-lighter: #FFE9D5;
+    --mui-error-light: #FFAC82;
+    --mui-error-main: #FF5630;
+    --mui-error-dark: #B71D18;
+    --mui-error-darker: #7A0916;
+    --mui-error-contrast: #FFFFFF;
+
+    /* Grey Colors */
+    --mui-grey-50: #FCFDFD;
+    --mui-grey-100: #F9FAFB;
+    --mui-grey-200: #F4F6F8;
+    --mui-grey-300: #DFE3E8;
+    --mui-grey-400: #C4CDD5;
+    --mui-grey-500: #919EAB;
+    --mui-grey-600: #637381;
+    --mui-grey-700: #454F5B;
+    --mui-grey-800: #1C252E;
+    --mui-grey-900: #141A21;
+
+    /* Background Colors */
+    --mui-background-paper: #FFFFFF;
+    --mui-background-default: #F9FAFB;
+    --mui-background-neutral: #F4F6F8;
+
+    /* Text Colors */
+    --mui-text-primary: #1C252E;
+    --mui-text-secondary: #637381;
+    --mui-text-disabled: #919EAB;
+  }
+}
