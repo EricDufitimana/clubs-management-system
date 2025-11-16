@@ -5,6 +5,10 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -15,9 +19,22 @@ type UserTableToolbarProps = {
   filterName: string;
   onFilterName: (event: React.ChangeEvent<HTMLInputElement>) => void;
   currentUserClub?: string | null;
+  isSuperAdmin?: boolean;
+  clubs?: Array<{ id: string; club_name: string }>;
+  selectedClub?: string;
+  onClubChange?: (club: string) => void;
 };
 
-export function UserTableToolbar({ numSelected, filterName, onFilterName, currentUserClub }: UserTableToolbarProps) {
+export function UserTableToolbar({ 
+  numSelected, 
+  filterName, 
+  onFilterName, 
+  currentUserClub,
+  isSuperAdmin = false,
+  clubs = [],
+  selectedClub = 'all',
+  onClubChange,
+}: UserTableToolbarProps) {
   return (
     <Toolbar
       sx={{
@@ -41,7 +58,7 @@ export function UserTableToolbar({ numSelected, filterName, onFilterName, curren
         <OutlinedInput
           value={filterName}
           onChange={onFilterName}
-          placeholder="Search user..."
+          placeholder={isSuperAdmin ? "Search user..." : "Search user..."}
           startAdornment={
             <InputAdornment position="start">
               <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
@@ -49,7 +66,24 @@ export function UserTableToolbar({ numSelected, filterName, onFilterName, curren
           }
           sx={{ maxWidth: 320 }}
         />
-            {currentUserClub && (
+            {isSuperAdmin && clubs.length > 0 && (
+              <FormControl sx={{ minWidth: 200 }}>
+                <Select
+                  value={selectedClub}
+                  onChange={(e) => onClubChange?.(e.target.value)}
+                  displayEmpty
+                >
+                  <MenuItem value="all">All Clubs</MenuItem>
+                  {clubs.map((club) => (
+                    <MenuItem key={club.id} value={club.club_name}>
+                      {club.club_name}
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="No Club">No Club</MenuItem>
+                </Select>
+              </FormControl>
+            )}
+            {!isSuperAdmin && currentUserClub && (
               <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
                 Club: <strong>{currentUserClub}</strong>
               </Typography>

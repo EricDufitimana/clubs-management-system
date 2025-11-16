@@ -15,6 +15,10 @@ import TablePagination from '@mui/material/TablePagination';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import CircularProgress from '@mui/material/CircularProgress';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
 import Link from 'next/link';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -82,7 +86,7 @@ function getCombinationAcronym(combination: string | null | undefined): string {
 
 export function UserView() {
   const table = useTable();
-  const { userId } = useUserRole();
+  const { userId, role, isSuperAdmin } = useUserRole();
 
   const [filterName, setFilterName] = useState('');
   const [students, setStudents] = useState<UserProps[]>([]);
@@ -90,6 +94,8 @@ export function UserView() {
   const [openDialog, setOpenDialog] = useState(false);
   const [currentUserClubId, setCurrentUserClubId] = useState<string | null>(null);
   const [clubName, setClubName] = useState<string | null>(null);
+  const [selectedClubFilter, setSelectedClubFilter] = useState<string>('all');
+  const [clubs, setClubs] = useState<Array<{ id: string; club_name: string }>>([]);
   const [allStudents, setAllStudents] = useState<Array<{
     id: string;
     first_name: string;
@@ -111,7 +117,11 @@ export function UserView() {
     }
 
     try {
-      const url = `/api/students/fetch?user_id=${userId}`;
+      // For super_admin, fetch all students from club-members table (all clubs)
+      // For admin, fetch students from their specific club(s)
+      const url = isSuperAdmin 
+        ? '/api/students/fetch'  // No user_id = all students from all clubs
+        : `/api/students/fetch?user_id=${userId}`;
       
       const response = await fetch(url);
       if (!response.ok) {
@@ -119,7 +129,7 @@ export function UserView() {
       }
       const data = await response.json();
       
-      // Map student data to UserProps format (without club_name since all are from same club)
+      // Map student data to UserProps format
       const mappedStudents: UserProps[] = data.map((student: any) => ({
         id: student.id,
         name: `${student.first_name} ${student.last_name}`,
@@ -128,15 +138,16 @@ export function UserView() {
         company: student.combination || null, // Store full combination for badge display
         avatarUrl: student.avatarUrl || '',
         isVerified: true,
+        club_name: student.club_name || null, // Include club_name for super_admin filtering
       }));
       
       setStudents(mappedStudents);
     } catch (error) {
-      console.error('[USER_VIEW] Error fetching students:', error);
+      console.error('[USER_VIEW] Error fetching data:', error);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, isSuperAdmin]);
 
   const fetchCurrentUserClub = useCallback(async () => {
     if (!userId) return;
@@ -152,6 +163,26 @@ export function UserView() {
       console.error('[USER_VIEW] Error fetching current user club:', error);
     }
   }, [userId]);
+
+  const fetchClubs = useCallback(async () => {
+    if (!isSuperAdmin) return;
+    
+    try {
+      const response = await fetch('/api/clubs/fetch');
+      if (response.ok) {
+        const data = await response.json();
+        const clubList = data
+          .filter((club: any) => club.status === 'active')
+          .map((club: any) => ({
+            id: club.id,
+            club_name: club.club_name,
+          }));
+        setClubs(clubList);
+      }
+    } catch (error) {
+      console.error('[USER_VIEW] Error fetching clubs:', error);
+    }
+  }, [isSuperAdmin]);
 
   const fetchAllStudents = useCallback(async () => {
     // Preload all students in the background for the Add Members dialog
@@ -236,11 +267,26 @@ export function UserView() {
       fetchCurrentUserClub();
       // Preload all students in the background
       fetchAllStudents();
+      // Fetch clubs if super_admin
+      if (isSuperAdmin) {
+        fetchClubs();
+      }
     }
-  }, [fetchStudents, fetchCurrentUserClub, fetchAllStudents, userId]);
+  }, [fetchStudents, fetchCurrentUserClub, fetchAllStudents, fetchClubs, userId, isSuperAdmin]);
+
+  // Filter by club if super_admin and club filter is selected
+  const filteredByClub = isSuperAdmin && selectedClubFilter !== 'all'
+    ? students.filter(user => {
+        // Handle null club_name - filter it out unless "No Club" is selected
+        if (!user.club_name) {
+          return selectedClubFilter === 'No Club';
+        }
+        return user.club_name === selectedClubFilter;
+      })
+    : students;
 
   const dataFiltered: UserProps[] = applyFilter({
-    inputData: students,
+    inputData: filteredByClub,
     comparator: getComparator(table.order, table.orderBy),
     filterName,
   });
@@ -267,25 +313,27 @@ export function UserView() {
             </span>
           )}
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            component={Link}
-            href="/dashboard/admin/users/left"
-            variant="outlined"
-            color="inherit"
-          >
-            View Left Members
-          </Button>
-          <Button
-            variant="contained"
-            color="inherit"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-            onClick={handleOpenDialog}
-            disabled={!currentUserClubId}
-          >
-            Add Members
-          </Button>
-        </Box>
+        {!isSuperAdmin && (
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button
+              component={Link}
+              href="/dashboard/admin/users/left"
+              variant="outlined"
+              color="inherit"
+            >
+              View Left Members
+            </Button>
+            <Button
+              variant="contained"
+              color="inherit"
+              startIcon={<Iconify icon="mingcute:add-line" />}
+              onClick={handleOpenDialog}
+              disabled={!currentUserClubId}
+            >
+              Add Members
+            </Button>
+          </Box>
+        )}
       </Box>
 
       <Card>
@@ -294,6 +342,13 @@ export function UserView() {
           filterName={filterName}
           onFilterName={(event: React.ChangeEvent<HTMLInputElement>) => {
             setFilterName(event.target.value);
+            table.onResetPage();
+          }}
+          isSuperAdmin={isSuperAdmin}
+          clubs={clubs}
+          selectedClub={selectedClubFilter}
+          onClubChange={(club: string) => {
+            setSelectedClubFilter(club);
             table.onResetPage();
           }}
         />
@@ -317,6 +372,7 @@ export function UserView() {
                   { id: 'name', label: 'Name' },
                   { id: 'company', label: 'Combination' },
                   { id: 'role', label: 'Grade' },
+                  ...(isSuperAdmin ? [{ id: 'club_name', label: 'Club' }] : []),
                   { id: 'status', label: 'Status' },
                   { id: '' },
                 ]}
@@ -324,7 +380,7 @@ export function UserView() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={isSuperAdmin ? 6 : 6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -341,7 +397,8 @@ export function UserView() {
                           row={row}
                           selected={table.selected.includes(row.id)}
                           onSelectRow={() => table.onSelectRow(row.id)}
-                          onRemove={() => handleRemove(row.id)}
+                          onRemove={isSuperAdmin ? undefined : () => handleRemove(row.id)}
+                          isSuperAdmin={isSuperAdmin}
                         />
                       ))}
 
@@ -352,13 +409,15 @@ export function UserView() {
 
                     {noStudents && (
                       <TableRow>
-                        <TableCell align="center" colSpan={6}>
+                        <TableCell align="center" colSpan={isSuperAdmin ? 6 : 6}>
                           <Box sx={{ py: 15, textAlign: 'center' }}>
                             <Typography variant="h6" sx={{ mb: 1 }}>
-                              No Students Found
+                              {isSuperAdmin ? 'No Users Found' : 'No Students Found'}
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                              There are no students in the system yet.
+                              {isSuperAdmin 
+                                ? 'There are no users in the system yet.' 
+                                : 'There are no students in the system yet.'}
                             </Typography>
                           </Box>
                         </TableCell>

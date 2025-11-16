@@ -116,12 +116,64 @@ export async function GET(request: Request){
                 });
             }
         } else {
-            // If no club filter, get all students (for super admin or when no user_id provided)
-            students = await prisma.student.findMany();
-            // For super admin, set all to active by default
-            students.forEach(student => {
-                studentStatusMap.set(student.id.toString(), 'active');
-            });
+            // If no club filter, get all students from all clubs (for super admin)
+            // First, get all active club members
+            const allMembers = await prisma.$queryRaw<Array<{
+                student_id: bigint;
+                club_id: bigint;
+                membership_status: 'active' | 'left';
+            }>>`
+                SELECT student_id, club_id, membership_status
+                FROM "club-members"
+                WHERE membership_status = 'active'
+            `;
+
+            // Get club names
+            const allClubIds = [...new Set(allMembers.map(m => m.club_id.toString()))];
+            if (allClubIds.length > 0) {
+                const clubs = await prisma.$queryRaw<Array<{
+                    id: bigint;
+                    club_name: string;
+                }>>`
+                    SELECT id, club_name
+                    FROM clubs
+                    WHERE id = ANY(${allClubIds.map(id => BigInt(id))}::bigint[])
+                `;
+
+                const clubNameMap = new Map<string, string>();
+                clubs.forEach(club => {
+                    clubNameMap.set(club.id.toString(), club.club_name);
+                });
+
+                // Map students to clubs
+                const studentIds = new Set<string>();
+                allMembers.forEach(member => {
+                    const studentIdStr = member.student_id.toString();
+                    studentIds.add(studentIdStr);
+                    const clubName = clubNameMap.get(member.club_id.toString()) || '';
+                    // Map student to club name (if multiple clubs, keep the first one found)
+                    if (!studentClubMap.has(studentIdStr)) {
+                        studentClubMap.set(studentIdStr, clubName);
+                    }
+                    // Store membership status (prefer active if multiple clubs)
+                    if (!studentStatusMap.has(studentIdStr) || member.membership_status === 'active') {
+                        studentStatusMap.set(studentIdStr, member.membership_status);
+                    }
+                });
+
+                // Get student details for all member IDs
+                if (studentIds.size > 0) {
+                    const memberIdArray = Array.from(studentIds).map(id => BigInt(id));
+                    students = await prisma.student.findMany({
+                        where: {
+                            id: { in: memberIdArray }
+                        }
+                    });
+                }
+            } else {
+                // No club members found, return empty array
+                students = [];
+            }
         }
 
         const serializedStudents = students.map((student) => {

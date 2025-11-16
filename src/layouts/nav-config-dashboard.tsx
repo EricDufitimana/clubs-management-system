@@ -29,20 +29,9 @@ const adminNavItems: NavItem[] = [
     roles: ['admin', 'super_admin'],
   },
   {
-    title: 'Products',
-    path: '/dashboard/admin/products',
-    icon: icon('ic-cart'),
-    roles: ['admin', 'super_admin'],
-    info: (
-      <Label color="error" variant="inverted">
-        +3
-      </Label>
-    ),
-  },
-  {
-    title: 'Blog',
-    path: '/dashboard/admin/blog',
-    icon: icon('ic-blog'),
+    title: 'Attendance',
+    path: '/dashboard/admin/attendance',
+    icon: <Icon icon="solar:clipboard-check-bold" width={24} height={24} />,
     roles: ['admin', 'super_admin'],
   },
 ];
@@ -62,20 +51,9 @@ const superAdminNavItems: NavItem[] = [
     roles: ['super_admin'],
   },
   {
-    title: 'Products',
-    path: '/dashboard/super-admin/products',
-    icon: icon('ic-cart'),
-    roles: ['super_admin'],
-    info: (
-      <Label color="error" variant="inverted">
-        +3
-      </Label>
-    ),
-  },
-  {
-    title: 'Blog',
-    path: '/dashboard/super-admin/blog',
-    icon: icon('ic-blog'),
+    title: 'Reports',
+    path: '/dashboard/super-admin/reports',
+    icon: <Icon icon="solar:chart-square-bold-duotone" width={24} height={24} />,
     roles: ['super_admin'],
   },
 ];
@@ -85,7 +63,7 @@ export const navData: NavItem[] = [
   {
     title: 'Dashboard',
     path: '/dashboard',
-    icon: icon('ic-analytics'),
+    icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
   },
   ...adminNavItems,
   ...superAdminNavItems,
@@ -100,7 +78,7 @@ export function getNavDataForRole(role: 'admin' | 'super_admin' | null): NavItem
     items.push({
       title: 'Dashboard',
       path: '/dashboard/super-admin',
-      icon: icon('ic-analytics'),
+      icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
     });
     // Super admin gets all items
     items.push(...superAdminNavItems);
@@ -108,7 +86,7 @@ export function getNavDataForRole(role: 'admin' | 'super_admin' | null): NavItem
     items.push({
       title: 'Dashboard',
       path: '/dashboard/admin',
-      icon: icon('ic-analytics'),
+      icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
     });
     // Admin gets admin items
     items.push(...adminNavItems);
@@ -117,7 +95,7 @@ export function getNavDataForRole(role: 'admin' | 'super_admin' | null): NavItem
     items.push({
       title: 'Dashboard',
       path: '/dashboard',
-      icon: icon('ic-analytics'),
+      icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
     });
   }
 

@@ -30,6 +30,8 @@ model User {
   role         UserRole @default(admin)
   created_at   DateTime @default(now()) @db.Timestamptz
 
+  clubLeaders ClubLeader[]
+
   @@map("users")
 }
 
@@ -41,8 +43,10 @@ model Club {
   status           ClubStatus @default(active)
   created_by       String     @db.Text
 
-  members ClubMember[]
-  sessions Session[]
+  members     ClubMember[]
+  leaders     ClubLeader[]
+  invites     ClubInvite[]
+  sessions    Session[]
 
   @@map("clubs")
 }
@@ -91,6 +95,14 @@ enum MembershipStatus {
   @@map("membership_status")
 }
 
+enum AttendanceStatus {
+  present
+  absent
+  excused
+
+  @@map("attendance_status")
+}
+
 model ClubInvite {
   id         BigInt         @id @default(autoincrement())
   club_id    BigInt
@@ -100,6 +112,8 @@ model ClubInvite {
   expires_at DateTime       @db.Timestamptz
   created_at DateTime       @default(now()) @db.Timestamptz
   used_at    DateTime?      @db.Timestamptz
+
+  club Club @relation(fields: [club_id], references: [id])
 
   @@index([token])
   @@index([club_id])
@@ -117,6 +131,7 @@ model Student {
   created_at DateTime    @default(now()) @db.Timestamptz
 
   clubMembers ClubMember[]
+  attendance  Attendance[]
 
   @@index([student_id])
   @@map("students")
@@ -140,13 +155,44 @@ model ClubMember {
 
 model Session {
   id       BigInt   @id @default(autoincrement())
-  club_id BigInt
+  club_id  BigInt
   notes    String   @db.Text
   date     DateTime @db.Timestamptz
 
-  club Club @relation(fields: [club_id], references: [id])
+  club       Club         @relation(fields: [club_id], references: [id])
+  attendance Attendance[]
 
   @@index([club_id])
   @@index([date])
   @@map("sessions")
+}
+
+model ClubLeader {
+  id        BigInt         @id @default(autoincrement())
+  user_id   BigInt
+  club_id   BigInt
+  role      ClubLeaderRole
+  created_at DateTime       @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id])
+  club Club @relation(fields: [club_id], references: [id])
+
+  @@index([user_id])
+  @@index([club_id])
+  @@map("club_leaders")
+}
+
+model Attendance {
+  id               BigInt           @id @default(autoincrement())
+  session_id       BigInt
+  student_id       BigInt
+  attendance_status AttendanceStatus
+  created_at       DateTime         @default(now()) @db.Timestamptz
+
+  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  student Student @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([session_id])
+  @@index([student_id])
+  @@map("attendance")
 }

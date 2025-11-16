@@ -1,16 +1,17 @@
 import type { Metadata } from 'next';
 
 import { CONFIG } from 'src/config-global';
-import { LeftMembersView } from 'src/sections/user/view/left-members-view';
+import { SuperAdminReportsView } from 'src/sections/super-admin/view/super-admin-reports-view';
 
 // ----------------------------------------------------------------------
 
 export const metadata: Metadata = {
-  title: `Left Members - ${CONFIG.appName}`,
+  title: `Reports - ${CONFIG.appName}`,
 };
 
-export default async function AdminLeftMembersPage() {
+export default async function SuperAdminReportsPage() {
   // Middleware handles authentication and role-based access
-  return <LeftMembersView />;
+  return <SuperAdminReportsView />;
 }
+
 

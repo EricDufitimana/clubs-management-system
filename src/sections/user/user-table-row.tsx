@@ -12,6 +12,7 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
+import Typography from '@mui/material/Typography';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -36,9 +37,10 @@ type UserTableRowProps = {
   selected: boolean;
   onSelectRow: () => void;
   onRemove?: () => void;
+  isSuperAdmin?: boolean;
 };
 
-export function UserTableRow({ row, selected, onSelectRow, onRemove }: UserTableRowProps) {
+export function UserTableRow({ row, selected, onSelectRow, onRemove, isSuperAdmin = false }: UserTableRowProps) {
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -100,7 +102,10 @@ export function UserTableRow({ row, selected, onSelectRow, onRemove }: UserTable
         <TableCell>
           <Box sx={{ display: 'flex', gap: 1 }}>
             {row.role && row.role !== '-' ? (
-              <Label color={getGradeColor(row.role)} variant="soft">
+              <Label 
+                color={getGradeColor(row.role)} 
+                variant="soft"
+              >
                 {row.role}
               </Label>
             ) : (
@@ -108,6 +113,20 @@ export function UserTableRow({ row, selected, onSelectRow, onRemove }: UserTable
             )}
           </Box>
         </TableCell>
+
+        {isSuperAdmin && (
+          <TableCell>
+            {row.club_name ? (
+              <Label color="default" variant="soft">
+                {row.club_name}
+              </Label>
+            ) : (
+              <Typography variant="body2" color="text.secondary">
+                No Club
+              </Typography>
+            )}
+          </TableCell>
+        )}
 
         <TableCell>
           <Label color={(row.status === 'left' && 'error') || 'success'}>
