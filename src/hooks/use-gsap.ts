@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-// eslint-disable-next-line import/no-unresolved
 import gsap from 'gsap';
-// eslint-disable-next-line import/no-unresolved
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
 // ----------------------------------------------------------------------
