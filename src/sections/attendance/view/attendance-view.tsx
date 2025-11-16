@@ -342,7 +342,7 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
                     color: 'info.main',
                   }}
                 >
-                  <Iconify icon="solar:chart-square-bold-duotone" width={22} />
+                  <Iconify icon="mingcute:chart-line" width={22} />
                 </Box>
 
                 <Box>
