@@ -228,8 +228,8 @@ export function SessionsView() {
     return acc;
   }, {} as Record<string, Session[]>);
 
-  const getSessionColor = (index: number) => {
-    const colors = ['primary', 'success', 'info', 'secondary', 'default'] as const;
+  const getSessionColor = (index: number): 'primary' | 'success' | 'info' | 'secondary' | 'warning' => {
+    const colors: Array<'primary' | 'success' | 'info' | 'secondary' | 'warning'> = ['primary', 'success', 'info', 'secondary', 'warning'];
     return colors[index % colors.length];
   };
 
@@ -305,9 +305,10 @@ export function SessionsView() {
                     const sessionDate = new Date(session.date);
                     const isPast = sessionDate < new Date();
                     const color = getSessionColor(index);
+                    const paletteColor = color as 'primary' | 'success' | 'info' | 'secondary' | 'warning';
 
                     return (
-                      <Grid key={session.id} xs={12} sm={6} md={4}>
+                      <Grid key={session.id} size={{ xs: 12, sm: 6, md: 4 }}>
                         <Card
                           sx={{
                             p: 3,
@@ -316,8 +317,8 @@ export function SessionsView() {
                             flexDirection: 'column',
                             position: 'relative',
                             overflow: 'hidden',
-                            background: `linear-gradient(135deg, ${alpha(theme.palette[color].main, 0.08)} 0%, ${alpha(theme.palette[color].main, 0.04)} 100%)`,
-                            border: `1px solid ${alpha(theme.palette[color].main, 0.2)}`,
+                            background: `linear-gradient(135deg, ${alpha(theme.palette[paletteColor].main, 0.08)} 0%, ${alpha(theme.palette[paletteColor].main, 0.04)} 100%)`,
+                            border: `1px solid ${alpha(theme.palette[paletteColor].main, 0.2)}`,
                           }}
                         >
                           {/* Decorative corner element */}
@@ -328,7 +329,7 @@ export function SessionsView() {
                               right: 0,
                               width: 100,
                               height: 100,
-                              background: `linear-gradient(135deg, ${alpha(theme.palette[color].main, 0.1)} 0%, transparent 100%)`,
+                              background: `linear-gradient(135deg, ${alpha(theme.palette[paletteColor].main, 0.1)} 0%, transparent 100%)`,
                               borderRadius: '0 0 0 100%',
                             }}
                           />
@@ -339,7 +340,7 @@ export function SessionsView() {
                                 label={isPast ? 'Past' : 'Upcoming'}
                                 color={isPast ? 'default' : color}
                                 size="small"
-                                variant="soft"
+                                variant="filled"
                               />
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                 <IconButton
@@ -351,7 +352,7 @@ export function SessionsView() {
                                   sx={{ 
                                     color: `${color}.main`,
                                     '&:hover': {
-                                      bgcolor: alpha(theme.palette[color].main, 0.08),
+                                      bgcolor: alpha(theme.palette[paletteColor].main, 0.08),
                                     },
                                   }}
                                 >
