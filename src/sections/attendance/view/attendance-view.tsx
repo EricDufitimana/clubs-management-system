@@ -64,7 +64,11 @@ type AttendanceStatus = 'present' | 'absent' | 'excused';
 
 // ----------------------------------------------------------------------
 
-export function AttendanceView() {
+type AttendanceViewProps = {
+  sessionId?: string;
+};
+
+export function AttendanceView({ sessionId }: AttendanceViewProps = {} as AttendanceViewProps) {
   const theme = useTheme();
   const { userId } = useUserRole();
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,8 @@ export function AttendanceView() {
   // Fetch attendance records
   const fetchAttendanceRecords = useCallback(async () => {
     try {
-      const response = await fetch('/api/attendance');
+      const url = sessionId ? `/api/attendance?sessionId=${sessionId}` : '/api/attendance';
+      const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
         setAttendanceRecords(data);
@@ -84,7 +89,7 @@ export function AttendanceView() {
     } catch (error) {
       console.error('[ATTENDANCE_VIEW] Error fetching attendance:', error);
     }
-  }, []);
+  }, [sessionId]);
 
   // Fetch students
   const fetchStudents = useCallback(async () => {
@@ -119,12 +124,12 @@ export function AttendanceView() {
       Promise.all([
         fetchAttendanceRecords(),
         fetchStudents(),
-        fetchSessionsWithoutAttendance(),
+        ...(sessionId ? [] : [fetchSessionsWithoutAttendance()]),
       ]).finally(() => {
         setLoading(false);
       });
     }
-  }, [userId, fetchAttendanceRecords, fetchStudents, fetchSessionsWithoutAttendance]);
+  }, [userId, sessionId, fetchAttendanceRecords, fetchStudents, fetchSessionsWithoutAttendance]);
 
   const handleOpenDialog = useCallback(() => {
     setOpenDialog(true);
