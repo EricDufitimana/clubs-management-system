@@ -1,40 +1,40 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
+import CircularProgress from '@mui/material/CircularProgress';
 
+import { activateClub } from 'src/actions/activateClub';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { deactivateClub } from 'src/actions/deactivateClub';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
-import { AddClubDialog } from '../components/add-club-dialog';
-import { EditClubDialog } from '../components/edit-club-dialog';
-import { InviteOfficersDialog } from '../components/invite-officers-dialog';
-import { ClubTableRow } from '../club-table-row';
-import { deactivateClub } from 'src/actions/deactivateClub';
-import { activateClub } from 'src/actions/activateClub';
-import { ClubTableHead } from '../club-table-head';
+import { useTable } from './use-table';
 import { TableNoData } from '../table-no-data';
+import { ClubTableRow } from '../club-table-row';
+import { ClubTableHead } from '../club-table-head';
 import { TableEmptyRows } from '../table-empty-rows';
 import { ClubsTableToolbar } from '../clubs-table-toolbar';
+import { AddClubDialog } from '../components/add-club-dialog';
+import { EditClubDialog } from '../components/edit-club-dialog';
 import { emptyRows, applyFilter, getComparator } from '../utils';
-import { useTable } from './use-table';
+import { InviteOfficersDialog } from '../components/invite-officers-dialog';
 
 import type { ClubProps } from '../club-table-row';
-import TableCell from '@mui/material/TableCell';
-import TableRow from '@mui/material/TableRow';
-import CircularProgress from '@mui/material/CircularProgress';
 
 // ----------------------------------------------------------------------
 

@@ -1,8 +1,10 @@
 'use server';
+
 import { NextResponse } from 'next/server';
-import { prisma } from 'src/lib/prisma';
-import { createClient } from 'src/utils/supabase/server';
+
 import { getAvatarUrl } from 'src/utils/get-avatar';
+
+import { prisma } from 'src/lib/prisma';
 
 export async function GET(request: Request) {
   try {
@@ -71,7 +73,7 @@ export async function GET(request: Request) {
         grade: member.grade,
         combination: member.combination,
         gender: member.gender,
-        avatarUrl: avatarUrl,
+        avatarUrl,
         joined_at: member.joined_at.toISOString(),
         left_at: member.left_at.toISOString(),
       };

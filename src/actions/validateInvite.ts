@@ -1,4 +1,5 @@
 'use server';
+
 import { prisma } from '../lib/prisma';
 
 export async function validateInvite(token: string) {

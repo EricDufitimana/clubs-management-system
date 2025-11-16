@@ -10,14 +10,14 @@ import Checkbox from '@mui/material/Checkbox';
 import MenuList from '@mui/material/MenuList';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
-import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
-import CircularProgress from '@mui/material/CircularProgress';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
+import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
-import { getGradeColor, getCombinationColor, formatCombination } from 'src/sections/user/utils/colors';
+import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
 
 // ----------------------------------------------------------------------
 

@@ -2,16 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-import Grid from '@mui/material/Grid';
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
-import CardHeader from '@mui/material/CardHeader';
-import CardContent from '@mui/material/CardContent';
-import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import Divider from '@mui/material/Divider';
+import CardHeader from '@mui/material/CardHeader';
+import Typography from '@mui/material/Typography';
+import CardContent from '@mui/material/CardContent';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+
 import { Iconify } from 'src/components/iconify';
 
 import { AnalyticsWidgetSummary } from 'src/sections/overview/analytics-widget-summary';

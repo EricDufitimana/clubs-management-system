@@ -4,20 +4,21 @@ import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { Iconify } from 'src/components/iconify';
 import { signup } from 'src/actions/login';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 

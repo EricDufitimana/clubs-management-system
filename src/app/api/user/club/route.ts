@@ -1,7 +1,10 @@
 'use server';
+
 import { NextResponse } from 'next/server';
-import { prisma } from 'src/lib/prisma';
+
 import { createClient } from 'src/utils/supabase/server';
+
+import { prisma } from 'src/lib/prisma';
 
 export async function GET() {
   try {

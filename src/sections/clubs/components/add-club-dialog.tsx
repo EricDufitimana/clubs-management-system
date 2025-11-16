@@ -9,8 +9,8 @@ import TextField from '@mui/material/TextField';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
 import CircularProgress from '@mui/material/CircularProgress';
+import DialogContentText from '@mui/material/DialogContentText';
 
 import { addClub } from 'src/actions/addClub';
 

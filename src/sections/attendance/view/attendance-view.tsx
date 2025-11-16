@@ -1,31 +1,34 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Grid from '@mui/material/Grid';
 import Table from '@mui/material/Table';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import Grid from '@mui/material/Grid';
+import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
-import TableRow from '@mui/material/TableRow';
 import TableHead from '@mui/material/TableHead';
+import Typography from '@mui/material/Typography';
+import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
-import { alpha, useTheme } from '@mui/material/styles';
+
+import { useUserRole } from 'src/hooks/use-user-role';
+
+import { fDate } from 'src/utils/format-time';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { Iconify } from 'src/components/iconify';
+
 import { Label } from 'src/components/label';
+import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { fDate } from 'src/utils/format-time';
-import { getGradeColor, getCombinationColor, formatCombination } from 'src/sections/user/utils/colors';
+
 import { RecordAttendanceDialog } from '../components/record-attendance-dialog';
-import { useUserRole } from 'src/hooks/use-user-role';
 
 // ----------------------------------------------------------------------
 
@@ -148,9 +151,7 @@ export function AttendanceView() {
   const totalRecords = attendanceRecords.length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
+  const getInitials = (firstName: string, lastName: string) => `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
   const getStatusColor = (status: AttendanceStatus) => {
     switch (status) {

@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+
 import { notFound } from 'next/navigation';
 
 import { CONFIG } from 'src/config-global';
 import { AuthLayout } from 'src/layouts/auth';
+
 import { InviteRegisterView } from 'src/sections/auth/invite-register-view';
 
 // ----------------------------------------------------------------------

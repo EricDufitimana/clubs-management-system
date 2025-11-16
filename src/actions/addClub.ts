@@ -1,6 +1,7 @@
 'use server'
-import { createClient } from '../utils/supabase/server'
+
 import { prisma } from '../lib/prisma'
+import { createClient } from '../utils/supabase/server'
 
 export async function addClub(formData: FormData){
     console.log('[ADD_CLUB] Starting club creation process...');

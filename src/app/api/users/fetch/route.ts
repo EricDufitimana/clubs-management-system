@@ -1,7 +1,10 @@
 'use server';
+
 import { NextResponse } from 'next/server';
-import { prisma } from 'src/lib/prisma';
+
 import { getAvatarUrl } from 'src/utils/get-avatar';
+
+import { prisma } from 'src/lib/prisma';
 
 export async function GET(Request: Request) {
     try {

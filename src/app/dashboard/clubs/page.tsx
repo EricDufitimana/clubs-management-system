@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+
 import { redirect } from 'next/navigation';
 
-import { CONFIG } from 'src/config-global';
 import { getCurrentUserRole } from 'src/utils/get-user-role';
+
+import { CONFIG } from 'src/config-global';
 
 // ----------------------------------------------------------------------
 

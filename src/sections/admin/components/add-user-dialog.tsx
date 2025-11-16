@@ -184,6 +184,7 @@ export function AddUserDialog({ open, onClose, onAdd, onError }: AddUserDialogPr
           {loading ? 'Adding...' : 'Add User'}
         </Button>
       </DialogActions>
+      </Box>
     </Dialog>
   );
 }

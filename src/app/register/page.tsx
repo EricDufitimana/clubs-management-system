@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 import { CONFIG } from 'src/config-global';
+import { AuthLayout } from 'src/layouts/auth';
 
 import { SignUpView } from 'src/sections/auth';
-import { AuthLayout } from 'src/layouts/auth';
 
 // ----------------------------------------------------------------------
 

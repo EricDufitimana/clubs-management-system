@@ -1,18 +1,18 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 
+import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Alert from '@mui/material/Alert';
-import Snackbar from '@mui/material/Snackbar';
-import Box from '@mui/material/Box';
 
-import { validateInvite } from 'src/actions/validateInvite';
 import { AuthLayout } from 'src/layouts/auth';
+import { validateInvite } from 'src/actions/validateInvite';
 
 export default function JoinClubPage() {
   const params = useParams();

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { CONFIG } from 'src/config-global';
+
 import { LeftMembersView } from 'src/sections/user/view/left-members-view';
 
 // ----------------------------------------------------------------------

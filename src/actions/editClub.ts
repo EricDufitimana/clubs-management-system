@@ -1,6 +1,7 @@
 'use server'
-import { createClient } from '../utils/supabase/server'
+
 import { prisma } from '../lib/prisma'
+import { createClient } from '../utils/supabase/server'
 
 export async function editClub(clubId: string, formData: FormData){
     console.log('[EDIT_CLUB] Starting club update process...');
@@ -36,8 +37,8 @@ export async function editClub(clubId: string, formData: FormData){
                 id: BigInt(clubId)
             },
             data: {
-                club_name: club_name,
-                club_description: club_description,
+                club_name,
+                club_description,
             }
         })
         

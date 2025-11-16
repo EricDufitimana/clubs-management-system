@@ -126,7 +126,7 @@ export function NavMobile({
     if (open) {
       onClose();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [pathname]);
 
   return (

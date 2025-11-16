@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+
 import { CONFIG } from 'src/config-global';
+
 import { Logo } from 'src/components/logo';
 
 export default function Footer() {

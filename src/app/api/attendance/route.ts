@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 
-import { prisma } from 'src/lib/prisma';
-import { createClient } from 'src/utils/supabase/server';
-import { requireRole } from 'src/utils/get-user-role';
 import { getAvatarUrl } from 'src/utils/get-avatar';
+import { requireRole } from 'src/utils/get-user-role';
+import { createClient } from 'src/utils/supabase/server';
+
+import { prisma } from 'src/lib/prisma';
 
 // ----------------------------------------------------------------------
 

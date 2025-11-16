@@ -1,18 +1,18 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
 import CircularProgress from '@mui/material/CircularProgress';
-import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
+import DialogContentText from '@mui/material/DialogContentText';
 
 import { generateAndSendInvites } from 'src/actions/generateInvites';
 

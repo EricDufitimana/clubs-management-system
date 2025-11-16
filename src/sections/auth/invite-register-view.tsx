@@ -1,23 +1,26 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
-import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
-import { Iconify } from 'src/components/iconify';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
-import { completeInviteRegistration } from 'src/actions/completeInviteRegistration';
-import { validateInvite } from 'src/actions/validateInvite';
+
 import { createClient } from 'src/utils/supabase/client';
+
+import { validateInvite } from 'src/actions/validateInvite';
+import { completeInviteRegistration } from 'src/actions/completeInviteRegistration';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 

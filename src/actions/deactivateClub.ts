@@ -1,6 +1,7 @@
 'use server'
-import { createClient } from '../utils/supabase/server'
+
 import { prisma } from '../lib/prisma'
+import { createClient } from '../utils/supabase/server'
 
 export async function deactivateClub(clubId: string){
     console.log('[DEACTIVATE_CLUB] Starting club deactivation process...');

@@ -1,7 +1,8 @@
 "use server";
 
+import type { AttendanceStatus } from "@prisma/client";
+
 import { prisma } from "src/lib/prisma";
-import { AttendanceStatus } from "@prisma/client";
 
 
 
@@ -16,13 +17,11 @@ export default async function (
     console.log('[ADD_ATTENDANCE] Selected students data:', JSON.stringify(selectedStudents, null, 2));
     
     try{
-        const attendanceData = selectedStudents.map((student) => {
-            return{
+        const attendanceData = selectedStudents.map((student) => ({
                 session_id: parseInt(sessionId),
                 student_id: parseInt(student.student_id),
                 attendance_status: student.attendance_status as AttendanceStatus,
-            }
-        });
+            }));
 
         console.log('[ADD_ATTENDANCE] Prepared attendance data:', JSON.stringify(attendanceData, null, 2));
         console.log('[ADD_ATTENDANCE] Attempting to create attendance records...');

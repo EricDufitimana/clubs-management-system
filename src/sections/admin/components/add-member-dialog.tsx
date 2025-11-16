@@ -1,30 +1,32 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Dialog from '@mui/material/Dialog';
-import Button from '@mui/material/Button';
 import List from '@mui/material/List';
 import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
+import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import ListItem from '@mui/material/ListItem';
+import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import ListItemText from '@mui/material/ListItemText';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
-import CircularProgress from '@mui/material/CircularProgress';
 import InputAdornment from '@mui/material/InputAdornment';
-import Checkbox from '@mui/material/Checkbox';
-import Typography from '@mui/material/Typography';
-import Alert from '@mui/material/Alert';
+import CircularProgress from '@mui/material/CircularProgress';
+
+import { getAvatarUrl } from 'src/utils/get-avatar';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-import { getAvatarUrl } from 'src/utils/get-avatar';
-import { getGradeColor, getCombinationColor, formatCombination } from 'src/sections/user/utils/colors';
+
+import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
 
 // ----------------------------------------------------------------------
 

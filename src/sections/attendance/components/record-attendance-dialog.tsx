@@ -1,30 +1,33 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
-import Stack from '@mui/material/Stack';
+import MenuItem from '@mui/material/MenuItem';
+import Snackbar from '@mui/material/Snackbar';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
-import Snackbar from '@mui/material/Snackbar';
-import Alert from '@mui/material/Alert';
-import { alpha, useTheme } from '@mui/material/styles';
 
-import { Iconify } from 'src/components/iconify';
-import { Label } from 'src/components/label';
 import { fDate } from 'src/utils/format-time';
-import { getGradeColor, getCombinationColor, formatCombination } from 'src/sections/user/utils/colors';
+
 import addAttendance from 'src/actions/addAttendance';
+
+import { Label } from 'src/components/label';
+import { Iconify } from 'src/components/iconify';
+
+import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
 
 // ----------------------------------------------------------------------
 
@@ -193,9 +196,7 @@ export function RecordAttendanceDialog({
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
 
-  const getInitials = (firstName: string, lastName: string) => {
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-  };
+  const getInitials = (firstName: string, lastName: string) => `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>

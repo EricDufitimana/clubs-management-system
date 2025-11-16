@@ -1,6 +1,7 @@
 'use server'
-import { createClient } from '../utils/supabase/server'
+
 import { prisma } from '../lib/prisma'
+import { createClient } from '../utils/supabase/server'
 
 export async function activateClub(clubId: string){
     console.log('[ACTIVATE_CLUB] Starting club activation process...');

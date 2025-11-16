@@ -9,6 +9,8 @@ import Box from '@mui/material/Box';
 import Alert from '@mui/material/Alert';
 import { useTheme } from '@mui/material/styles';
 
+import { useUserRole } from 'src/hooks/use-user-role';
+
 import { _notifications } from 'src/_mock';
 
 import { Logo } from 'src/components/logo';
@@ -16,14 +18,13 @@ import { Logo } from 'src/components/logo';
 import { NavMobile, NavDesktop } from './nav';
 import { _account } from '../nav-config-account';
 import { dashboardLayoutVars } from './css-vars';
-import { getNavDataForRole } from '../nav-config-dashboard';
-import { useUserRole } from 'src/hooks/use-user-role';
 import { MainSection } from '../core/main-section';
 import { Searchbar } from '../components/searchbar';
 import { _workspaces } from '../nav-config-workspace';
 import { MenuButton } from '../components/menu-button';
 import { HeaderSection } from '../core/header-section';
 import { LayoutSection } from '../core/layout-section';
+import { getNavDataForRole } from '../nav-config-dashboard';
 import { AccountPopover } from '../components/account-popover';
 import { NotificationsPopover } from '../components/notifications-popover';
 

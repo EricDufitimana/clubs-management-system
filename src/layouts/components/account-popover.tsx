@@ -15,7 +15,9 @@ import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
+
 import { useCurrentUser } from 'src/hooks/use-current-user';
+
 import { logout } from 'src/actions/logout';
 
 // ----------------------------------------------------------------------

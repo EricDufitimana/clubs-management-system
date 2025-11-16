@@ -1,6 +1,6 @@
-import { Label } from 'src/components/label';
-import { SvgColor } from 'src/components/svg-color';
 import { Icon } from '@iconify/react';
+
+import { SvgColor } from 'src/components/svg-color';
 
 // ----------------------------------------------------------------------
 

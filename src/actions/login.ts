@@ -1,7 +1,9 @@
 'use server'
-import { createClient } from '../utils/supabase/server'
+
 import {revalidatePath} from 'next/cache'
 import { redirect } from 'next/navigation'
+
+import { createClient } from '../utils/supabase/server'
 import { getCurrentUserRole } from '../utils/get-user-role'
 
 export async function login(FormData: FormData){
@@ -99,7 +101,7 @@ export async function signup(FormData: FormData){
                 data: {
                     first_name: data.first_name,
                     last_name: data.last_name,
-                    display_name: display_name,
+                    display_name,
                 }
             }
         })
@@ -139,7 +141,7 @@ export async function signup(FormData: FormData){
             console.log('[SIGNUP] Updating user display name...');
             const { error: updateError } = await supabase.auth.updateUser({
                 data: {
-                    display_name: display_name
+                    display_name
                 }
             });
             

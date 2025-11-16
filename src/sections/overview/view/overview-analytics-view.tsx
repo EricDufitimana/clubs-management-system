@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import Box from '@mui/material/Box';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+
 import { Iconify } from 'src/components/iconify';
 
 import { AnalyticsCurrentVisits } from '../analytics-current-visits';
@@ -72,12 +73,10 @@ export function OverviewAnalyticsView() {
   };
 
   // Format month labels for charts
-  const formatMonthLabels = (months: string[]): string[] => {
-    return months.map((month) => {
+  const formatMonthLabels = (months: string[]): string[] => months.map((month) => {
       const date = new Date(month + '-01');
       return date.toLocaleDateString('en-US', { month: 'short' });
     });
-  };
 
   if (loading) {
     return (

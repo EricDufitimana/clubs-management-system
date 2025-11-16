@@ -1,4 +1,5 @@
 'use server';
+
 import { prisma } from '../lib/prisma';
 import { createClient } from '../utils/supabase/server';
 
@@ -57,8 +58,8 @@ export async function completeInviteRegistration(
     // 3. Sign up the user
     console.log('[INVITE_REGISTRATION] Creating new user account...');
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email: email,
-      password: password,
+      email,
+      password,
       options: {
         data: {
           first_name: first_name.trim(),

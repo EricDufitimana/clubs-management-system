@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { CONFIG } from 'src/config-global';
+
 import { ClubsView } from 'src/sections/clubs/view';
 
 // ----------------------------------------------------------------------

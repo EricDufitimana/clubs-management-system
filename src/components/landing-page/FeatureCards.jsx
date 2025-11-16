@@ -1,4 +1,3 @@
-import { Icon } from 'lucide-react';
 
 export default function FeatureCard({ text, lucideIcon }) {
   return (

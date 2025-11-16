@@ -1,7 +1,9 @@
 'use server';
+
 import { NextResponse } from 'next/server';
-import { getCurrentUserRole } from 'src/utils/get-user-role';
+
 import { createClient } from 'src/utils/supabase/server';
+import { getCurrentUserRole } from 'src/utils/get-user-role';
 
 export async function GET() {
   try {
@@ -16,7 +18,7 @@ export async function GET() {
     
     return NextResponse.json({ 
       userId: user.id,
-      role: role 
+      role 
     });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch user role' }, { status: 500 });
