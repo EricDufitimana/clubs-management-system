@@ -21,6 +21,9 @@
     "isolatedModules": true,
     /* Next.js */
     "paths": {
+      "@/*": [
+        "./src/*"
+      ],
       "src/*": [
         "./src/*"
       ]

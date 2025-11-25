@@ -148,17 +148,7 @@ export function SignInView() {
         }}
       >
         <Typography variant="h5">Sign in</Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.secondary',
-          }}
-        >
-          Don’t have an account?
-          <Link variant="subtitle2" sx={{ ml: 0.5 }}>
-            Get started
-          </Link>
-        </Typography>
+    
       </Box>
       {renderForm}
       <Divider sx={{ my: 3, '&::before, &::after': { borderTopStyle: 'dashed' } }}>

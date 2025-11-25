@@ -3,25 +3,42 @@
 import './globals.css';
 
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { UserPlus, BarChart3, Building2 } from 'lucide-react';
 
 import { Button } from '@mui/material';
 
-import { useGsapFadeUp, useGsapStaggerChildrenOnScroll } from 'src/hooks/use-gsap';
+import { useGsapStaggerChildrenOnScroll } from 'src/hooks/use-gsap';
 
 import { CONFIG } from 'src/config-global';
 
 import { Logo } from 'src/components/logo';
+import { AnimatedText } from '@/components/AnimatedText';
+import { ScrollContainerProvider, useScrollContainer } from '@/contexts/ScrollContainerContext';
 
 // ----------------------------------------------------------------------
 
 export default function SiteLayout({ children }: { children: React.ReactNode }) {
-  const titleRef = useRef<HTMLDivElement | null>(null);
-  const offeringsRef = useRef<HTMLDivElement | null>(null);
+  return (
+    <ScrollContainerProvider>
+      <SiteLayoutContent>{children}</SiteLayoutContent>
+    </ScrollContainerProvider>
+  );
+}
 
-  useGsapFadeUp(titleRef);
+function SiteLayoutContent({ children }: { children: React.ReactNode }) {
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const offeringsRef = useRef<HTMLDivElement | null>(null);
+  const { setScrollContainer } = useScrollContainer();
+
   useGsapStaggerChildrenOnScroll(offeringsRef, { fromY: 24 });
+
+  // Update context when ref is available
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      setScrollContainer(scrollContainerRef.current);
+    }
+  }, [setScrollContainer]);
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -42,15 +59,29 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
             </Button>
           </Link>
         </div>
-        <div className="pt-12" ref={titleRef}>
-          <h1 className="text-mui-grey-900 text-4xl font-medium tracking-wider">Managing Clubs</h1>
-          <h1 className="text-mui-grey-900 text-4xl font-medium tracking-wider">
+        <div className="pt-12">
+          <AnimatedText
+            animation="words-rotate-in"
+            as="h1"
+            className="text-mui-grey-900 text-4xl font-medium tracking-wider"
+          >
+            Managing Clubs
+          </AnimatedText>
+          <AnimatedText
+            animation="words-rotate-in"
+            as="h1"
+            className="text-mui-grey-900 text-4xl font-medium tracking-wider"
+          >
             Made <span className="text-mui-primary-main font-medium">Simple</span>
-          </h1>
+          </AnimatedText>
         </div>
-        <p className="text-mui-grey-900 text-md font-normal pt-4">
+        <AnimatedText
+          animation="words-slide-up"
+          as="p"
+          className="text-mui-grey-900 text-md font-normal pt-4"
+        >
           Effortless, streamlined management to organize your club with ease.
-        </p>
+        </AnimatedText>
         <div className="pt-12">
           <p className="text-mui-grey-900 text-sm font-medium">Our Offerings</p>
           <div ref={offeringsRef} className="grid grid-cols-3 gap-4 pt-4">
@@ -73,7 +104,10 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Main content area - two thirds of screen */}
-      <div className="w-3/5 ml-[40%] h-screen bg-mui-background-default overflow-hidden overflow-y-auto">
+      <div 
+        ref={scrollContainerRef}
+        className="w-3/5 ml-[40%] h-screen bg-mui-background-default overflow-hidden overflow-y-auto"
+      >
         {children}
       </div>
     </div>

@@ -7,8 +7,8 @@ import { Providers } from './providers';
 // ----------------------------------------------------------------------
 
 export const metadata: Metadata = {
-  title: 'Minimal UI Kit',
-  description: 'The starting point for your next project with Minimal UI Kit',
+  title: 'Clubs Management System',
+  description: '',
   icons: {
     icon: '/favicon.ico',
   },
