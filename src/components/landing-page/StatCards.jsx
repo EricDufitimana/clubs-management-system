@@ -23,7 +23,7 @@ function Number({ n, suffix = '' }) {
   });
 
   return (
-    <animated.div ref={ref} className={"inline"}>
+    <animated.div ref={ref} className="inline">
       {number.to((num) => Math.floor(num).toString() + suffix)}
     </animated.div>
   );
