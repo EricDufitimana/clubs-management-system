@@ -14,6 +14,9 @@ export const metadata: Metadata = {
   keywords: 'react,material,kit,application,dashboard,admin,template',
 };
 
+// Force dynamic rendering (uses cookies for auth)
+export const dynamic = 'force-dynamic';
+
 export default async function Page() {
   const role = await getCurrentUserRole();
   

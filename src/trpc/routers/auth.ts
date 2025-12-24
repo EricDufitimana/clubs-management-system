@@ -15,6 +15,61 @@ export const authRouter = createTRPCRouter({
         };
     }),
 
+    // Get current user profile with full details
+    getUserProfile: baseProcedure.query(async ({ ctx }) => {
+        try {
+            const supabase = await createClient();
+            const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+            
+            if (authError || !authUser) {
+                return {
+                    id: null,
+                    email: null,
+                    first_name: null,
+                    last_name: null,
+                    avatarUrl: null,
+                };
+            }
+
+            // If user is in database, return database user data
+            if (ctx.user) {
+                const dbUser = await prisma.user.findUnique({
+                    where: { auth_user_id: authUser.id },
+                    select: {
+                        id: true,
+                        first_name: true,
+                        last_name: true,
+                    },
+                });
+
+                if (dbUser) {
+                    return {
+                        id: dbUser.id.toString(),
+                        email: authUser.email || null,
+                        first_name: dbUser.first_name,
+                        last_name: dbUser.last_name,
+                        avatarUrl: `/assets/images/avatar/avatar-${(Number(dbUser.id) % 24) + 1}.webp`,
+                    };
+                }
+            }
+
+            // Fallback to auth user metadata
+            return {
+                id: authUser.id,
+                email: authUser.email || null,
+                first_name: authUser.user_metadata?.first_name || null,
+                last_name: authUser.user_metadata?.last_name || null,
+                avatarUrl: authUser.user_metadata?.avatar_url || null,
+            };
+        } catch (error: any) {
+            console.error('[AUTH] Error fetching user profile:', error);
+            throw new TRPCError({
+                code: 'INTERNAL_SERVER_ERROR',
+                message: 'Failed to fetch user profile',
+            });
+        }
+    }),
+
     logout: baseProcedure.mutation(async () => {
         const supabase = await createClient();
         const {error} = await supabase.auth.signOut();

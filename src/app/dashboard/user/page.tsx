@@ -11,6 +11,9 @@ export const metadata: Metadata = {
   title: `Users - ${CONFIG.appName}`,
 };
 
+// Force dynamic rendering (uses cookies for auth via tRPC context)
+export const dynamic = 'force-dynamic';
+
 export default async function Page() {
   // Prefetch data for better performance
   const queryClient = getQueryClient();

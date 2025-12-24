@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: `Attendance - ${CONFIG.appName}`,
 };
 
+// Force dynamic rendering (uses cookies for auth via tRPC context)
+export const dynamic = 'force-dynamic';
+
 export default async function AttendancePage() {
   const queryClient = getQueryClient();
   

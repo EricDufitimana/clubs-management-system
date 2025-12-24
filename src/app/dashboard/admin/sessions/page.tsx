@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: `Sessions - ${CONFIG.appName}`,
 };
 
+// Force dynamic rendering (uses cookies for auth via tRPC context)
+export const dynamic = 'force-dynamic';
+
 export default async function AdminSessionsPage() {
   const queryClient = getQueryClient();
   

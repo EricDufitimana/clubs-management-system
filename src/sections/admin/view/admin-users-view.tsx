@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -19,6 +20,7 @@ import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { useTRPC } from 'src/trpc/client';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -46,6 +48,7 @@ type UserData = {
 };
 
 export function AdminUsersView() {
+  const trpc = useTRPC();
   const table = useTable();
   const [openDialog, setOpenDialog] = useState(false);
   const [filterName, setFilterName] = useState('');
@@ -56,8 +59,10 @@ export function AdminUsersView() {
     severity: 'success'
   });
   const [loading, setLoading] = useState(true);
-  const [currentUserClub, setCurrentUserClub] = useState<string | null>(null);
-  const [currentUserClubId, setCurrentUserClubId] = useState<string | null>(null);
+  
+  const { data: clubData } = useQuery(trpc.clubs.getCurrentUserClub.queryOptions());
+  const currentUserClub = clubData?.club_name || null;
+  const currentUserClubId = clubData?.club_id || null;
 
   // Map user data to format expected by filter/comparator
   const mappedUsers = users.map(user => {
@@ -138,23 +143,9 @@ export function AdminUsersView() {
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
 
-  const fetchCurrentUserClub = useCallback(async () => {
-    try {
-      const response = await fetch('/api/user/club');
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUserClub(data.club_name || null);
-        setCurrentUserClubId(data.club_id || null);
-      }
-    } catch (error) {
-      console.error('[ADMIN_USERS] Error fetching current user club:', error);
-    }
-  }, []);
-
   useEffect(() => {
     fetchUsers();
-    fetchCurrentUserClub();
-  }, [fetchUsers, fetchCurrentUserClub]);
+  }, [fetchUsers]);
 
   return (
     <DashboardContent>

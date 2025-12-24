@@ -1,15 +1,7 @@
 /** **************************************
-* Tailwind CSS
-*************************************** */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/** **************************************
 * Fonts: app
 *************************************** */
 @import '@fontsource-variable/dm-sans';
-
 @import '@fontsource/barlow/400.css';
 @import '@fontsource/barlow/500.css';
 @import '@fontsource/barlow/600.css';
@@ -21,9 +13,15 @@
 *************************************** */
 /* scrollbar */
 @import './components/scrollbar/styles.css';
-
 /* chart */
 @import './components/chart/styles.css';
+
+/** **************************************
+* Tailwind CSS
+*************************************** */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /** **************************************
 * Baseline

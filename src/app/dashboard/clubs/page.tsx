@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: `Clubs - ${CONFIG.appName}`,
 };
 
+// Force dynamic rendering (uses cookies for auth)
+export const dynamic = 'force-dynamic';
+
 export default async function ClubsPage() {
   const role = await getCurrentUserRole();
   

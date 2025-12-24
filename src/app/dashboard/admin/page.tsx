@@ -13,6 +13,9 @@ export const metadata: Metadata = {
   keywords: 'react,material,kit,application,dashboard,admin,template',
 };
 
+// Force dynamic rendering (uses cookies for auth via tRPC context)
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
   // Prefetch dashboard stats for better performance
   const queryClient = getQueryClient();

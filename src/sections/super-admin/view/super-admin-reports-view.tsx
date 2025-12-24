@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -12,6 +12,7 @@ import CardContent from '@mui/material/CardContent';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { useTRPC } from 'src/trpc/client';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -72,30 +73,10 @@ type ReportsResponse = {
 // ----------------------------------------------------------------------
 
 export function SuperAdminReportsView() {
-  const [data, setData] = useState<ReportsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const trpc = useTRPC();
+  const { data, isLoading, isError } = useQuery(trpc.dashboard.getSuperAdminReports.queryOptions());
 
-  const fetchReports = useCallback(async () => {
-    try {
-      const res = await fetch('/api/reports/super-admin');
-      if (!res.ok) {
-        throw new Error(`Failed to fetch reports: ${res.status}`);
-      }
-      const json = await res.json();
-      setData(json);
-    } catch (error) {
-      console.error('[SUPER_ADMIN_REPORTS_VIEW] Error fetching reports:', error);
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchReports();
-  }, [fetchReports]);
-
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardContent maxWidth="xl">
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
@@ -105,13 +86,15 @@ export function SuperAdminReportsView() {
     );
   }
 
-  if (!data) {
+  if (isError || !data) {
     return (
       <DashboardContent maxWidth="xl">
         <Typography variant="h4" sx={{ mb: 2 }}>
           Reports
         </Typography>
-        <Typography color="text.secondary">No report data available.</Typography>
+        <Typography color="text.secondary">
+          {isError ? 'Failed to load report data.' : 'No report data available.'}
+        </Typography>
       </DashboardContent>
     );
   }
