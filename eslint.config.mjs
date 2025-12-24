@@ -60,7 +60,7 @@ const importRules = () => ({
   'import/default': 0,
   'import/namespace': 0,
   'import/no-named-as-default': 0,
-  'import/newline-after-import': 2,
+  'import/newline-after-import': 0,
   'import/no-named-as-default-member': 0,
   'import/no-cycle': [
     0, // disabled if slow

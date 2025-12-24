@@ -74,7 +74,7 @@ export function NavDesktop({
               component={RouterLink}
               href={item.path}
               sx={[
-                (theme) => ({
+                (muiTheme) => ({
                   px: 2,
                   py: 1,
                   gap: 1,

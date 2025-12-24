@@ -141,7 +141,7 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
     queryClient.invalidateQueries({ queryKey: trpc.sessions.getSessionsWithoutAttendance.queryKey() });
   }, [queryClient, trpc]);
 
-  const handleSubmitAttendance = useCallback((sessionId: string, attendanceData: Record<string, AttendanceStatus>) => {
+  const handleSubmitAttendance = useCallback((submittedSessionId: string, submittedAttendanceData: Record<string, AttendanceStatus>) => {
     // Refresh attendance records after submission
     queryClient.invalidateQueries({ queryKey: trpc.attendance.getAttendanceRecords.queryKey() });
     queryClient.invalidateQueries({ queryKey: trpc.sessions.getSessionsWithoutAttendance.queryKey() });

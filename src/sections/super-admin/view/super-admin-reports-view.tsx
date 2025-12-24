@@ -172,7 +172,7 @@ export function SuperAdminReportsView() {
             total={totalMembers}
             percent={0}
             color="primary"
-            // @ts-ignore - Icon type is too restrictive
+            // @ts-expect-error - Icon type is too restrictive
             icon={<Iconify icon="solar:users-group-rounded-bold-duotone" width={48} />}
             chart={{
               categories: newMembersCategories,
@@ -187,7 +187,7 @@ export function SuperAdminReportsView() {
             total={sessionAnalytics.totalSessions}
             percent={0}
             color="info"
-            // @ts-ignore - Icon type is too restrictive
+            // @ts-expect-error - Icon type is too restrictive
             icon={<Iconify icon="solar:calendar-mark-bold-duotone" width={48} />}
             chart={{
               categories: monthlyCategories,
@@ -202,7 +202,7 @@ export function SuperAdminReportsView() {
             total={sessionAnalytics.avgAttendancePerSession}
             percent={attendanceChange}
             color="success"
-            // @ts-ignore - Icon type is too restrictive
+            // @ts-expect-error - Icon type is too restrictive
             icon={<Iconify icon="solar:chart-square-bold-duotone" width={48} />}
             chart={{
               categories: monthlyCategories,
