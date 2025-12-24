@@ -10,14 +10,9 @@ const nextConfig = {
       },
     ],
   },
-  webpack: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, 'src'),
-      'src': require('path').resolve(__dirname, 'src'),
-    };
-    return config;
-  },
+  // Turbopack configuration (Next.js 16+ uses Turbopack by default)
+  // Path aliases are handled by tsconfig.json paths
+  turbopack: {},
 };
 
 module.exports = nextConfig;
