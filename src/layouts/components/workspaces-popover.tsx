@@ -38,11 +38,7 @@ export function WorkspacesPopover({ data = [], sx, ...other }: WorkspacesPopover
     enabled: !!userId && !isSuperAdmin,
   });
 
-  // Fetch all clubs for super admin
-  const { data: allClubsData } = useQuery({
-    ...trpc.clubs.getAllClubs.queryOptions(),
-    enabled: !!userId && isSuperAdmin,
-  });
+ 
 
   // Determine workspace name based on role
   const workspaceName = isSuperAdmin 

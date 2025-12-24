@@ -3,12 +3,14 @@
 import type { IconButtonProps } from '@mui/material/IconButton';
 
 import { useState, useCallback } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
 import Popover from '@mui/material/Popover';
+import Snackbar from '@mui/material/Snackbar';
 import Divider from '@mui/material/Divider';
 import MenuList from '@mui/material/MenuList';
 import Typography from '@mui/material/Typography';
@@ -37,8 +39,14 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'error',
+  });
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
@@ -59,16 +67,27 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
   const logoutMutation = useMutation({
     ...trpc.auth.logout.mutationOptions(),
     onSuccess: () => {
+      // Clear all query cache to prevent stale authenticated data
+      queryClient.clear();
       router.push('/');
     },
-    onError: (error: any) => {
+    onError: (error) => {
       console.error('[ACCOUNT_POPOVER] Logout error:', error);
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to logout. Please try again.',
+        severity: 'error',
+      });
     },
   });
 
   const handleLogout = useCallback(() => {
     logoutMutation.mutate();
   }, [logoutMutation]);
+
+  const handleCloseSnackbar = useCallback(() => {
+    setSnackbar((prev) => ({ ...prev, open: false }));
+  }, []);
 
   return (
     <>
@@ -180,6 +199,17 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
           </Button>
         </Box>
       </Popover>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 }
