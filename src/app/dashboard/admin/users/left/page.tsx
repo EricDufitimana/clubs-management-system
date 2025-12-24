@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 import { CONFIG } from 'src/config-global';
+import { trpc, getQueryClient } from '@/trpc/server';
 
 import { LeftMembersView } from 'src/sections/user/view/left-members-view';
 
@@ -11,7 +13,16 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminLeftMembersPage() {
-  // Middleware handles authentication and role-based access
-  return <LeftMembersView />;
+  const queryClient = getQueryClient();
+  
+  // Prefetch left members data
+  await queryClient.prefetchQuery(trpc.users.getLeftMembers.queryOptions());
+  await queryClient.prefetchQuery(trpc.clubs.getCurrentUserClub.queryOptions());
+  
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <LeftMembersView />
+    </HydrationBoundary>
+  );
 }
 

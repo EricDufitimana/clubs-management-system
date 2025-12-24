@@ -15,16 +15,17 @@ import { _notifications } from 'src/_mock';
 
 import { Logo } from 'src/components/logo';
 
-import { NavMobile, NavDesktop } from './nav';
+import { Icon } from '@iconify/react';
+
+import { AdminNav } from './admin-nav';
+import { SuperAdminNav } from './super-admin-nav';
 import { _account } from '../nav-config-account';
 import { dashboardLayoutVars } from './css-vars';
 import { MainSection } from '../core/main-section';
 import { Searchbar } from '../components/searchbar';
-import { _workspaces } from '../nav-config-workspace';
 import { MenuButton } from '../components/menu-button';
 import { HeaderSection } from '../core/header-section';
 import { LayoutSection } from '../core/layout-section';
-import { getNavDataForRole } from '../nav-config-dashboard';
 import { AccountPopover } from '../components/account-popover';
 import { NotificationsPopover } from '../components/notifications-popover';
 
@@ -55,15 +56,23 @@ export function DashboardLayout({
   const { role } = useUserRole();
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
-  
-  // Get navigation items based on user role
-  const navData = getNavDataForRole(role);
 
   const renderHeader = () => {
     const headerSlotProps: HeaderSectionProps['slotProps'] = {
       container: {
         maxWidth: false,
       },
+    };
+
+    // Render role-specific navigation component (no conditional checking inside nav components)
+    const renderNav = () => {
+      if (role === 'super_admin') {
+        return <SuperAdminNav layoutQuery={layoutQuery} open={open} onClose={onClose} onOpen={onOpen} />;
+      } else if (role === 'admin') {
+        return <AdminNav layoutQuery={layoutQuery} open={open} onClose={onClose} onOpen={onOpen} />;
+      }
+      // Default nav for users without role
+      return null;
     };
 
     const headerSlots: HeaderSectionProps['slots'] = {
@@ -81,9 +90,8 @@ export function DashboardLayout({
             onClick={onOpen}
             sx={{ mr: 1, ml: 1, [theme.breakpoints.up(layoutQuery)]: { display: 'none' } }}
           />
-          <NavMobile data={navData} open={open} onClose={onClose} workspaces={_workspaces} />
-          {/** @slot Nav desktop - horizontal */}
-          <NavDesktop data={navData} layoutQuery={layoutQuery} workspaces={_workspaces} sx={{ ml: 3 }} />
+          {/** @slot Role-specific navigation */}
+          {renderNav()}
         </>
       ),
       rightArea: (

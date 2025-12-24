@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useTRPC } from '@/trpc/client';
 
 type UserRole = 'admin' | 'super_admin' | null;
 
@@ -14,49 +15,15 @@ type UseUserRoleReturn = {
 };
 
 export function useUserRole(): UseUserRoleReturn {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [role, setRole] = useState<UserRole>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const trpc = useTRPC();
+  
+  // Get user from tRPC context (no additional DB queries)
+  const { data, isLoading } = useQuery({
+    ...trpc.auth.getCurrentUser.queryOptions(),
+  });
 
-  useEffect(() => {
-    async function fetchUserRole() {
-      try {
-        console.log('[USE_USER_ROLE] Fetching user role...');
-        const response = await fetch('/api/user/role');
-        
-        console.log('[USE_USER_ROLE] Response status:', response.status);
-        
-        if (response.status === 401) {
-          // Not authenticated
-          console.log('[USE_USER_ROLE] Not authenticated (401)');
-          setUserId(null);
-          setRole(null);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('[USE_USER_ROLE] Response not OK:', response.status, errorText);
-          throw new Error(`Failed to fetch user role: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('[USE_USER_ROLE] User role data:', data);
-        setUserId(data.userId);
-        setRole(data.role);
-      } catch (error) {
-        console.error('[USE_USER_ROLE] Error fetching role:', error);
-        setUserId(null);
-        setRole(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchUserRole();
-  }, []);
-
+  const userId = data?.userId || null;
+  const role = data?.role || null;
   const isAdmin = role === 'admin';
   const isSuperAdmin = role === 'super_admin';
   

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -22,10 +23,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { fDate } from 'src/utils/format-time';
 
-import addAttendance from 'src/actions/addAttendance';
-
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { useTRPC } from '@/trpc/client';
 
 import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
 
@@ -68,13 +68,14 @@ export function RecordAttendanceDialog({
   students,
 }: RecordAttendanceDialogProps) {
   const theme = useTheme();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGrade, setFilterGrade] = useState<string>('all');
   const [filterCombination, setFilterCombination] = useState<string>('all');
-  const [loading, setLoading] = useState(false);
-  const [loadingSessions, setLoadingSessions] = useState(false);
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
@@ -82,26 +83,21 @@ export function RecordAttendanceDialog({
     severity: 'success'
   });
 
-  // Fetch sessions without attendance when dialog opens
+  // Fetch sessions without attendance using tRPC
+  const sessionsQuery = useQuery({
+    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions(),
+    enabled: open,
+  });
+  
+  const loadingSessions = sessionsQuery.isLoading;
+  const sessionsData = sessionsQuery.data;
+
+  // Update sessions when data changes
   useEffect(() => {
-    if (open) {
-      const fetchSessions = async () => {
-        setLoadingSessions(true);
-        try {
-          const response = await fetch('/api/sessions/without-attendance');
-          if (response.ok) {
-            const data = await response.json();
-            setSessions(data);
-          }
-        } catch (error) {
-          console.error('[RECORD_ATTENDANCE_DIALOG] Error fetching sessions:', error);
-        } finally {
-          setLoadingSessions(false);
-        }
-      };
-      fetchSessions();
+    if (sessionsData) {
+      setSessions(sessionsData as any);
     }
-  }, [open]);
+  }, [sessionsData]);
 
   // Reset state when dialog opens/closes
   useEffect(() => {
@@ -135,46 +131,48 @@ export function RecordAttendanceDialog({
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
 
-  const handleSubmit = useCallback(async () => {
+  // Record attendance mutation
+  const recordAttendanceMutation = useMutation({
+    ...trpc.attendance.recordAttendance.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Attendance recorded successfully',
+        severity: 'success'
+      });
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: trpc.attendance.getAttendanceRecords.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.sessions.getSessionsWithoutAttendance.queryKey() });
+      // Call onSubmit to notify parent component
+      onSubmit(selectedSessionId, attendance);
+      onClose();
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to record attendance',
+        severity: 'error'
+      });
+    },
+  });
+
+  const handleSubmit = useCallback(() => {
     if (!selectedSessionId || Object.keys(attendance).length === 0) {
       return;
     }
-    setLoading(true);
-    try {
-      const attendanceData = Object.entries(attendance)
-        .filter(([_, status]) => status)
-        .map(([studentId, status]) => ({
-          student_id: studentId,
-          attendance_status: status as AttendanceStatus,
-        }));
-      const result = await addAttendance(selectedSessionId, attendanceData);
-      if (result.success) {
-        setSnackbar({
-          open: true,
-          message: result.message,
-          severity: 'success'
-        });
-        // Call onSubmit to notify parent component
-        onSubmit(selectedSessionId, attendance);
-        onClose();
-      } else {
-        setSnackbar({
-          open: true,
-          message: result.error || 'Failed to add attendance',
-          severity: 'error'
-        });
-      }
-    } catch (error) {
-      console.error('[RECORD_ATTENDANCE_DIALOG] Error submitting attendance:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to submit attendance',
-        severity: 'error'
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [selectedSessionId, attendance, onSubmit, onClose]);
+
+    const attendanceData = Object.entries(attendance)
+      .filter(([_, status]) => status)
+      .map(([studentId, status]) => ({
+        studentId,
+        status: status as AttendanceStatus,
+      }));
+
+    recordAttendanceMutation.mutate({
+      sessionId: selectedSessionId,
+      attendanceData,
+    });
+  }, [selectedSessionId, attendance, recordAttendanceMutation, onSubmit, onClose]);
 
   const filteredStudents = students.filter((student) => {
     const matchesSearch =
@@ -352,16 +350,16 @@ export function RecordAttendanceDialog({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ p: 3, pt: 2 }}>
-        <Button onClick={onClose} disabled={loading}>
+        <Button onClick={onClose} disabled={recordAttendanceMutation.isPending}>
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
-          disabled={!selectedSessionId || totalMarked === 0 || loading}
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <Iconify icon="eva:checkmark-fill" width={20} />}
+          disabled={!selectedSessionId || totalMarked === 0 || recordAttendanceMutation.isPending}
+          startIcon={recordAttendanceMutation.isPending ? <CircularProgress size={20} color="inherit" /> : <Iconify icon="eva:checkmark-fill" width={20} />}
         >
-          {loading ? 'Submitting...' : `Submit Attendance (${totalMarked} marked)`}
+          {recordAttendanceMutation.isPending ? 'Submitting...' : `Submit Attendance (${totalMarked} marked)`}
         </Button>
       </DialogActions>
       <Snackbar

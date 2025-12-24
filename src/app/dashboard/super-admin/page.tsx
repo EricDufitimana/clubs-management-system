@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 
 import { CONFIG } from 'src/config-global';
+import { trpc, getQueryClient } from 'src/trpc/server';
 
 import { OverviewAnalyticsView as DashboardView } from 'src/sections/overview/view';
 
@@ -13,7 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default async function SuperAdminPage() {
-  // Middleware handles authentication and role-based access
+  // Prefetch dashboard stats for better performance
+  const queryClient = getQueryClient();
+  await queryClient.prefetchQuery(trpc.dashboard.getStats.queryOptions());
+  
   return <DashboardView />;
 }
 

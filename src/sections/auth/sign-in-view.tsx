@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
@@ -19,6 +20,7 @@ import { useRouter } from 'src/routes/hooks';
 import { login } from 'src/actions/login';
 
 import { Iconify } from 'src/components/iconify';
+import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
 
@@ -26,51 +28,80 @@ export function SignInView() {
   const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
     message: '',
     severity: 'error'
   });
-
-  const handleSignIn = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+  
+  const trpc = useTRPC();
+  const loginMutation = useMutation({
+    ...trpc.auth.login.mutationOptions(),
+    onSuccess: (data) => {
+      setSnackbar({
+        open: true,
+        message: 'Login successful',
+        severity: 'success'
+      });
+      // Handle redirect on client side
+      if (data?.redirectPath) {
+        router.push(data.redirectPath);
+      }
+    },
+    onError: (error) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'An error occurred',
+        severity: 'error'
+      });
+    },
+  })
+  
+  const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
-    
     const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    loginMutation.mutate({ email, password });
+  }
+  // const handleSignIn = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   setLoading(true);
     
-    const submitData = new FormData();
-    submitData.append('email', formData.get('email') as string);
-    submitData.append('password', formData.get('password') as string);
+  //   const formData = new FormData(e.currentTarget);
     
-    try {
-      const result = await login(submitData);
+  //   const submitData = new FormData();
+  //   submitData.append('email', formData.get('email') as string);
+  //   submitData.append('password', formData.get('password') as string);
+    
+  //   try {
+  //     const result = await login(submitData);
       
-      if (result?.error) {
-        setSnackbar({
-          open: true,
-          message: result.error,
-          severity: 'error'
-        });
-        setLoading(false);
-      }
-      // If successful, login action will redirect, so component will unmount
-    } catch (error: any) {
-      // Redirect throws NEXT_REDIRECT error, which is expected
-      // If it's not a redirect, it's a real error
-      if (error?.digest?.startsWith('NEXT_REDIRECT')) {
-        // Redirect is happening, component will unmount
-        console.log('[SIGNIN] Redirect occurred');
-      } else {
-        setSnackbar({
-          open: true,
-          message: 'An error occurred while signing in',
-          severity: 'error'
-        });
-        setLoading(false);
-      }
-    }
-  }, []);
+  //     if (result?.error) {
+  //       setSnackbar({
+  //         open: true,
+  //         message: result.error,
+  //         severity: 'error'
+  //       });
+  //       setLoading(false);
+  //     }
+  //     // If successful, login action will redirect, so component will unmount
+  //   } catch (error: any) {
+  //     // Redirect throws NEXT_REDIRECT error, which is expected
+  //     // If it's not a redirect, it's a real error
+  //     if (error?.digest?.startsWith('NEXT_REDIRECT')) {
+  //       // Redirect is happening, component will unmount
+  //       console.log('[SIGNIN] Redirect occurred');
+  //     } else {
+  //       setSnackbar({
+  //         open: true,
+  //         message: 'An error occurred while signing in',
+  //         severity: 'error'
+  //       });
+  //       setLoading(false);
+  //     }
+  //   }
+  // }, []);
   
   const handleCloseSnackbar = useCallback(() => {
     setSnackbar(prev => ({ ...prev, open: false }));
@@ -128,10 +159,10 @@ export function SignInView() {
         type="submit"
         color="inherit"
         variant="contained"
-        disabled={loading}
-        startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+        disabled={loginMutation.isPending}
+        startIcon={loginMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
       >
-        {loading ? 'Signing in...' : 'Sign in'}
+        {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
       </Button>
     </Box>
   );

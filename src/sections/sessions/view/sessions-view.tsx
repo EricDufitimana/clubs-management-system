@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -25,9 +26,9 @@ import { useUserRole } from 'src/hooks/use-user-role';
 import { fDate } from 'src/utils/format-time';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { updateSession } from 'src/actions/updateSession';
 
 import { Iconify } from 'src/components/iconify';
+import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
 
@@ -43,10 +44,11 @@ export function SessionsView() {
   const theme = useTheme();
   const { userId } = useUserRole();
   
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
-  const [creating, setCreating] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
@@ -62,45 +64,58 @@ export function SessionsView() {
   const [currentUserClubId, setCurrentUserClubId] = useState<string | null>(null);
   const [clubName, setClubName] = useState<string | null>(null);
 
-  const fetchCurrentUserClub = useCallback(async () => {
-    if (!userId) return;
-    
-    try {
-      const response = await fetch(`/api/user/club-by-user?user_id=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUserClubId(data.club_id);
-        setClubName(data.club_name);
-      }
-    } catch (error) {
-      console.error('[SESSIONS_VIEW] Error fetching club:', error);
-    }
-  }, [userId]);
+  // Fetch current user club using tRPC
+  const { data: clubData } = useQuery({
+    ...trpc.clubs.getCurrentUserClub.queryOptions(),
+    enabled: !!userId,
+  });
 
-  const fetchSessions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/sessions');
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data);
-      } else {
-        setSnackbar({ open: true, message: 'Failed to load sessions', severity: 'error' });
-      }
-    } catch (error) {
-      console.error('[SESSIONS_VIEW] Error fetching sessions:', error);
-      setSnackbar({ open: true, message: 'Failed to load sessions', severity: 'error' });
-    } finally {
-      setLoading(false);
+  // Fetch sessions using tRPC
+  const { data: sessionsData, isLoading: loading } = useQuery({
+    ...trpc.sessions.getSessions.queryOptions(),
+    enabled: !!userId,
+  });
+
+  // Create session mutation
+  const createSessionMutation = useMutation({
+    ...trpc.sessions.createSession.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({ open: true, message: 'Session created successfully', severity: 'success' });
+      queryClient.invalidateQueries({ queryKey: trpc.sessions.getSessions.queryKey() });
+      setOpenDialog(false);
+      setEditingSessionId(null);
+      setFormData({ notes: '', date: '' });
+    },
+    onError: (error: any) => {
+      setSnackbar({ open: true, message: error.message || 'Failed to create session', severity: 'error' });
+    },
+  });
+
+  // Delete session mutation
+  const deleteSessionMutation = useMutation({
+    ...trpc.sessions.deleteSession.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({ open: true, message: 'Session deleted successfully', severity: 'success' });
+      queryClient.invalidateQueries({ queryKey: trpc.sessions.getSessions.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({ open: true, message: error.message || 'Failed to delete session', severity: 'error' });
+    },
+  });
+
+  // Update local state when data changes
+  useEffect(() => {
+    if (clubData) {
+      setCurrentUserClubId(clubData.club_id);
+      setClubName(clubData.club_name);
     }
-  }, []);
+  }, [clubData]);
 
   useEffect(() => {
-    if (userId !== null) {
-      fetchSessions();
-      fetchCurrentUserClub();
+    if (sessionsData) {
+      setSessions(sessionsData as any);
     }
-  }, [fetchSessions, fetchCurrentUserClub, userId]);
+  }, [sessionsData]);
 
   const handleOpenDialog = useCallback(() => {
     setEditingSessionId(null);
@@ -127,86 +142,28 @@ export function SessionsView() {
   }, []);
 
   const handleCloseDialog = useCallback(() => {
-    if (!creating) {
+    if (!createSessionMutation.isPending) {
       setOpenDialog(false);
       setEditingSessionId(null);
       setFormData({ notes: '', date: '' });
     }
-  }, [creating]);
+  }, [createSessionMutation.isPending]);
 
-  const handleCreateSession = useCallback(async () => {
+  const handleCreateSession = useCallback(() => {
     if (!formData.notes.trim() || !formData.date || !currentUserClubId) {
       setSnackbar({ open: true, message: 'Please fill in all fields', severity: 'error' });
       return;
     }
 
-    setCreating(true);
-    try {
-      const isEditing = editingSessionId !== null;
+    // Format date to ISO string
+    const dateISO = new Date(formData.date).toISOString();
 
-      if (isEditing) {
-        // Use server action for updating
-        const result = await updateSession(
-          editingSessionId,
-          currentUserClubId,
-          formData.notes,
-          formData.date
-        );
-
-        if ('error' in result) {
-          throw new Error(result.error);
-        }
-
-        setSnackbar({ 
-          open: true, 
-          message: result.message || 'Session updated successfully', 
-          severity: 'success' 
-        });
-      } else {
-        // Use API for creating
-        const response = await fetch('/api/sessions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            club_id: currentUserClubId,
-            notes: formData.notes,
-            date: formData.date,
-          }),
-        });
-
-        let data;
-        try {
-          data = await response.json();
-        } catch (parseError) {
-          throw new Error(response.statusText || 'Failed to create session');
-        }
-
-        if (!response.ok) {
-          throw new Error(data?.error || 'Failed to create session');
-        }
-
-        setSnackbar({ 
-          open: true, 
-          message: 'Session created successfully', 
-          severity: 'success' 
-        });
-      }
-
-      setOpenDialog(false);
-      setEditingSessionId(null);
-      setFormData({ notes: '', date: '' });
-      fetchSessions();
-    } catch (error: any) {
-      console.error('[SESSIONS_VIEW] Error saving session:', error);
-      setSnackbar({ 
-        open: true, 
-        message: error?.message || 'Failed to save session', 
-        severity: 'error' 
-      });
-    } finally {
-      setCreating(false);
-    }
-  }, [formData, currentUserClubId, editingSessionId, fetchSessions]);
+    createSessionMutation.mutate({
+      clubId: currentUserClubId,
+      notes: formData.notes,
+      date: dateISO,
+    });
+  }, [formData, currentUserClubId, createSessionMutation]);
 
   const handleCloseSnackbar = useCallback(() => {
     setSnackbar((prev) => ({ ...prev, open: false }));
@@ -418,7 +375,7 @@ export function SessionsView() {
               value={formData.date}
               onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))}
               InputLabelProps={{ shrink: true }}
-              disabled={creating}
+              disabled={createSessionMutation.isPending}
             />
             <TextField
               fullWidth
@@ -428,21 +385,21 @@ export function SessionsView() {
               value={formData.notes}
               onChange={(e) => setFormData((prev) => ({ ...prev, notes: e.target.value }))}
               placeholder="Enter session notes, agenda, or description..."
-              disabled={creating}
+              disabled={createSessionMutation.isPending}
             />
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDialog} disabled={creating}>
+          <Button onClick={handleCloseDialog} disabled={createSessionMutation.isPending}>
             Cancel
           </Button>
           <Button
             onClick={handleCreateSession}
             variant="contained"
-            disabled={creating || !formData.notes.trim() || !formData.date}
-            startIcon={creating ? <CircularProgress size={20} color="inherit" /> : null}
+            disabled={createSessionMutation.isPending || !formData.notes.trim() || !formData.date}
+            startIcon={createSessionMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
           >
-            {creating 
+            {createSessionMutation.isPending 
               ? (editingSessionId ? 'Updating...' : 'Creating...') 
               : (editingSessionId ? 'Update Session' : 'Create Session')}
           </Button>

@@ -2,12 +2,14 @@
 
 import { useState, useCallback } from 'react';
 
+import Box from '@mui/material/Box';
 import Popover from '@mui/material/Popover';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import MenuList from '@mui/material/MenuList';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { Label } from 'src/components/label';
@@ -31,9 +33,10 @@ type ClubTableRowProps = {
   onDeactivate: (clubId: string) => void;
   onActivate: (clubId: string) => void;
   onInvite: (clubId: string) => void;
+  isLoading?: boolean;
 };
 
-export function ClubTableRow({ row, selected, onSelectRow, onEdit, onDeactivate, onActivate, onInvite }: ClubTableRowProps) {
+export function ClubTableRow({ row, selected, onSelectRow, onEdit, onDeactivate, onActivate, onInvite, isLoading = false }: ClubTableRowProps) {
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
@@ -61,7 +64,10 @@ export function ClubTableRow({ row, selected, onSelectRow, onEdit, onDeactivate,
 
         <TableCell>
           <Label color={row.status === 'active' ? 'success' : 'default'}>
-            {row.status}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              {isLoading && <CircularProgress size={12} sx={{ color: 'inherit' }} />}
+              {row.status}
+            </Box>
           </Label>
         </TableCell>
 

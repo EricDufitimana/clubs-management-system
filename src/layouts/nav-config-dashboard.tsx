@@ -14,90 +14,77 @@ export type NavItem = {
   roles?: ('admin' | 'super_admin')[]; // If undefined, accessible to all
 };
 
-// Admin navigation items (accessible to both admin and super_admin)
-const adminNavItems: NavItem[] = [
+// Admin navigation items
+export const adminNavItems: NavItem[] = [
+  {
+    title: 'Dashboard',
+    path: '/dashboard/admin',
+    icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
+  },
   {
     title: 'Users',
     path: '/dashboard/admin/users',
     icon: icon('ic-user'),
-    roles: ['admin', 'super_admin'],
   },
   {
     title: 'Sessions',
     path: '/dashboard/admin/sessions',
     icon: <Icon icon="solar:calendar-mark-bold-duotone" width={24} height={24} />,
-    roles: ['admin', 'super_admin'],
   },
   {
     title: 'Attendance',
     path: '/dashboard/admin/attendance',
     icon: <Icon icon="solar:clipboard-check-bold" width={24} height={24} />,
-    roles: ['admin', 'super_admin'],
   },
 ];
 
-// Super admin navigation items (only for super_admin)
-const superAdminNavItems: NavItem[] = [
+// Super admin navigation items
+export const superAdminNavItems: NavItem[] = [
+  {
+    title: 'Dashboard',
+    path: '/dashboard/super-admin',
+    icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
+  },
   {
     title: 'Clubs',
     path: '/dashboard/super-admin/clubs',
     icon: <Icon icon="solar:users-group-rounded-bold-duotone" width={24} height={24} />,
-    roles: ['super_admin'],
   },
   {
     title: 'Users',
     path: '/dashboard/super-admin/users',
     icon: icon('ic-user'),
-    roles: ['super_admin'],
   },
   {
     title: 'Reports',
     path: '/dashboard/super-admin/reports',
     icon: <Icon icon="solar:chart-square-bold-duotone" width={24} height={24} />,
-    roles: ['super_admin'],
   },
 ];
 
-// Legacy navData for backward compatibility (will be filtered based on role)
+// Legacy navData for backward compatibility
 export const navData: NavItem[] = [
   {
     title: 'Dashboard',
     path: '/dashboard',
     icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
   },
-  ...adminNavItems,
-  ...superAdminNavItems,
+  ...adminNavItems.filter(item => item.path !== '/dashboard/admin'),
+  ...superAdminNavItems.filter(item => item.path !== '/dashboard/super-admin'),
 ];
 
-// Function to get navigation items based on user role
+// Deprecated: Use role-specific nav items directly instead
 export function getNavDataForRole(role: 'admin' | 'super_admin' | null): NavItem[] {
-  const items: NavItem[] = [];
-
-  // Add dashboard link based on role
   if (role === 'super_admin') {
-    items.push({
-      title: 'Dashboard',
-      path: '/dashboard/super-admin',
-      icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
-    });
-    // Super admin gets all items
-    items.push(...superAdminNavItems);
+    return superAdminNavItems;
   } else if (role === 'admin') {
-    items.push({
-      title: 'Dashboard',
-      path: '/dashboard/admin',
-      icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
-    });
-    // Admin gets admin items
-    items.push(...adminNavItems);
-  } else {
-    // Default dashboard for users without role
-    items.push({
+    return adminNavItems;
+  }
+  return [
+    {
       title: 'Dashboard',
       path: '/dashboard',
       icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
-    });
-  }
-
-  return items;
+    },
+  ];
 }

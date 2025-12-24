@@ -3,6 +3,7 @@
 import type { IconButtonProps } from '@mui/material/IconButton';
 
 import { useState, useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -13,12 +14,12 @@ import MenuList from '@mui/material/MenuList';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
 
 import { useCurrentUser } from 'src/hooks/use-current-user';
-
-import { logout } from 'src/actions/logout';
+import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
 
@@ -35,6 +36,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
   const router = useRouter();
   const pathname = usePathname();
   const { user, loading } = useCurrentUser();
+  const trpc = useTRPC();
 
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
 
@@ -54,19 +56,19 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
     [handleClosePopover, router]
   );
 
-  const handleLogout = useCallback(async () => {
-    try {
-      await logout();
-      // Redirect is handled by logout action
-    } catch (error: any) {
-      // Redirect throws NEXT_REDIRECT error, which is expected
-      if (error?.digest?.startsWith('NEXT_REDIRECT')) {
-        // Redirect is happening
-        return;
-      }
+  const logoutMutation = useMutation({
+    ...trpc.auth.logout.mutationOptions(),
+    onSuccess: () => {
+      router.push('/');
+    },
+    onError: (error: any) => {
       console.error('[ACCOUNT_POPOVER] Logout error:', error);
-    }
-  }, []);
+    },
+  });
+
+  const handleLogout = useCallback(() => {
+    logoutMutation.mutate();
+  }, [logoutMutation]);
 
   return (
     <>
@@ -171,8 +173,10 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
             size="medium" 
             variant="text"
             onClick={handleLogout}
+            disabled={logoutMutation.isPending}
+            startIcon={logoutMutation.isPending ? <CircularProgress size={16} color="inherit" /> : null}
           >
-            Logout
+            {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
           </Button>
         </Box>
       </Popover>

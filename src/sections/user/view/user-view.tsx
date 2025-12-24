@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -20,7 +21,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useUserRole } from 'src/hooks/use-user-role';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { removeStudent } from 'src/actions/removeStudent';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -35,6 +35,7 @@ import { UserTableToolbar } from '../user-table-toolbar';
 import { emptyRows, applyFilter, getComparator } from '../utils';
 
 import type { UserProps } from '../user-table-row';
+import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
 
@@ -108,100 +109,101 @@ export function UserView() {
     severity: 'success'
   });
 
-  const fetchStudents = useCallback(async () => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-    try {
-      // For super_admin, fetch all students from club-members table (all clubs)
-      // For admin, fetch students from their specific club(s)
-      const url = isSuperAdmin 
-        ? '/api/students/fetch'  // No user_id = all students from all clubs
-        : `/api/students/fetch?user_id=${userId}`;
-      
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch students');
-      }
-      const data = await response.json();
-      
-      // Map student data to UserProps format
-      const mappedStudents: UserProps[] = data.map((student: any) => ({
-        id: student.id,
-        name: `${student.first_name} ${student.last_name}`,
-        role: student.grade || '-',
-        status: student.membership_status || 'active',
-        company: student.combination || null, // Store full combination for badge display
-        avatarUrl: student.avatarUrl || '',
-        isVerified: true,
-        club_name: student.club_name || null, // Include club_name for super_admin filtering
-      }));
-      
-      setStudents(mappedStudents);
-    } catch (error) {
-      console.error('[USER_VIEW] Error fetching data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId, isSuperAdmin]);
+  // Fetch users based on role
+  const { data: usersByClub, isLoading: loadingByClub } = useQuery({
+    ...trpc.users.getUsersByClub.queryOptions(),
+    enabled: !!userId && !isSuperAdmin,
+  });
+  
+  const { data: allUsers, isLoading: loadingAllUsers } = useQuery({
+    ...trpc.users.getAllUsers.queryOptions(),
+    enabled: !!userId && isSuperAdmin,
+  });
 
-  const fetchCurrentUserClub = useCallback(async () => {
-    if (!userId) return;
-    
-    try {
-      const response = await fetch(`/api/user/club-by-user?user_id=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUserClubId(data.club_id || null);
-        setClubName(data.club_name || null);
-      }
-    } catch (error) {
-      console.error('[USER_VIEW] Error fetching current user club:', error);
-    }
-  }, [userId]);
+  // Fetch current user's club info
+  const { data: currentUserClubData } = useQuery({
+    ...trpc.clubs.getCurrentUserClub.queryOptions(),
+    enabled: !!userId && !isSuperAdmin,
+  });
 
-  const fetchClubs = useCallback(async () => {
-    if (!isSuperAdmin) return;
-    
-    try {
-      const response = await fetch('/api/clubs/fetch');
-      if (response.ok) {
-        const data = await response.json();
-        const clubList = data
+  // Fetch clubs list (for super admin)
+  const { data: clubsList } = useQuery({
+    ...trpc.clubs.getClubs.queryOptions(),
+    enabled: !!userId && isSuperAdmin,
+  });
+
+  // Fetch all students (for Add Members dialog)
+  const { data: allStudentsData } = useQuery({
+    ...trpc.students.getAllStudents.queryOptions(),
+    enabled: !!userId,
+  });
+
+  // Remove student mutation
+  const removeStudentMutation = useMutation({
+    ...trpc.students.removeStudent.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Member removed successfully',
+        severity: 'success',
+      });
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: trpc.users.getUsersByClub.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.users.getAllUsers.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to remove member',
+        severity: 'error',
+      });
+    },
+  });
+
+  const users = isSuperAdmin ? allUsers : usersByClub;
+  const queryLoading = isSuperAdmin ? loadingAllUsers : loadingByClub;
+
+  // Update students when users data changes
+  useEffect(() => {
+    if (users) {
+      setStudents(users);
+    } else {
+      setStudents([]);
+    }
+    setLoading(queryLoading);
+  }, [users, queryLoading]);
+
+  // Update current user club when data changes
+  useEffect(() => {
+    if (currentUserClubData) {
+      setCurrentUserClubId(currentUserClubData.club_id);
+      setClubName(currentUserClubData.club_name);
+    }
+  }, [currentUserClubData]);
+
+  // Update clubs list when data changes
+  useEffect(() => {
+    if (clubsList) {
+      const clubList = clubsList
           .filter((club: any) => club.status === 'active')
           .map((club: any) => ({
-            id: club.id,
+          id: club.id.toString(),
             club_name: club.club_name,
           }));
         setClubs(clubList);
       }
-    } catch (error) {
-      console.error('[USER_VIEW] Error fetching clubs:', error);
-    }
-  }, [isSuperAdmin]);
+  }, [clubsList]);
 
-  const fetchAllStudents = useCallback(async () => {
-    // Preload all students in the background for the Add Members dialog
-    try {
-      const response = await fetch('/api/students/fetch');
-      if (response.ok) {
-        const data = await response.json();
-        const studentList = data.map((student: any) => ({
-          id: student.id,
-          first_name: student.first_name,
-          last_name: student.last_name,
-          grade: student.grade,
-          combination: student.combination,
-          gender: student.gender,
-        }));
-        setAllStudents(studentList);
-      }
-    } catch (error) {
-      console.error('[USER_VIEW] Error preloading all students:', error);
+  // Update all students when data changes
+  useEffect(() => {
+    if (allStudentsData) {
+      setAllStudents(allStudentsData as any);
     }
-  }, []);
+  }, [allStudentsData]);
+
 
   const handleOpenDialog = useCallback(() => {
     setOpenDialog(true);
@@ -218,8 +220,10 @@ export function UserView() {
       severity: 'success'
     });
     handleCloseDialog();
-    fetchStudents();
-  }, [handleCloseDialog, fetchStudents]);
+    // Invalidate queries to refetch data
+    queryClient.invalidateQueries({ queryKey: trpc.users.getUsersByClub.queryKey() });
+    queryClient.invalidateQueries({ queryKey: trpc.users.getAllUsers.queryKey() });
+  }, [handleCloseDialog, queryClient, trpc]);
 
   const handleError = useCallback((error: string) => {
     setSnackbar({
@@ -233,44 +237,13 @@ export function UserView() {
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
 
-  const handleRemove = useCallback(async (studentId: string) => {
-    try {
-      const result = await removeStudent(studentId);
+  const handleRemove = useCallback((studentId: string) => {
+    removeStudentMutation.mutate({
+      studentId,
+      clubId: currentUserClubId || undefined,
+    });
+  }, [removeStudentMutation, currentUserClubId]);
 
-      if ('error' in result) {
-        throw new Error(result.error);
-      }
-
-      setSnackbar({
-        open: true,
-        message: result.message || 'Member removed successfully',
-        severity: 'success'
-      });
-      
-      // Refresh the student list
-      fetchStudents();
-    } catch (error: any) {
-      console.error('[USER_VIEW] Error removing member:', error);
-      setSnackbar({
-        open: true,
-        message: error.message || 'Failed to remove member',
-        severity: 'error'
-      });
-    }
-  }, [fetchStudents]);
-
-  useEffect(() => {
-    if (userId !== null) {
-      fetchStudents();
-      fetchCurrentUserClub();
-      // Preload all students in the background
-      fetchAllStudents();
-      // Fetch clubs if super_admin
-      if (isSuperAdmin) {
-        fetchClubs();
-      }
-    }
-  }, [fetchStudents, fetchCurrentUserClub, fetchAllStudents, fetchClubs, userId, isSuperAdmin]);
 
   // Filter by club if super_admin and club filter is selected
   const filteredByClub = isSuperAdmin && selectedClubFilter !== 'all'

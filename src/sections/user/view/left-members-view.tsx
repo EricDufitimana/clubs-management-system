@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -28,6 +29,7 @@ import { TableNoData } from '../table-no-data';
 import { TableEmptyRows } from '../table-empty-rows';
 import { UserTableToolbar } from '../user-table-toolbar';
 import { emptyRows, getComparator, visuallyHidden } from '../utils';
+import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
 
@@ -81,28 +83,28 @@ function getCombinationAcronym(combination: string | null | undefined): string {
 export function LeftMembersView() {
   const table = useTable();
   const { userId } = useUserRole();
+  const trpc = useTRPC();
 
   const [filterName, setFilterName] = useState('');
   const [members, setMembers] = useState<LeftMember[]>([]);
-  const [loading, setLoading] = useState(true);
   const [clubName, setClubName] = useState<string | null>(null);
 
-  const fetchLeftMembers = useCallback(async () => {
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
+  // Fetch left members using tRPC
+  const { data: leftMembersData, isLoading: loading } = useQuery({
+    ...trpc.users.getLeftMembers.queryOptions(),
+    enabled: !!userId,
+  });
 
-    try {
-      const url = `/api/students/left?user_id=${userId}`;
-      
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch left members');
-      }
-      const data = await response.json();
-      
-      const mappedMembers = data.map((member: any) => ({
+  // Fetch current user club using tRPC
+  const { data: clubData } = useQuery({
+    ...trpc.clubs.getCurrentUserClub.queryOptions(),
+    enabled: !!userId,
+  });
+
+  // Update local state when data changes
+  useEffect(() => {
+    if (leftMembersData) {
+      const mappedMembers = leftMembersData.map((member: any) => ({
         id: member.id,
         name: member.name,
         grade: member.grade || '-',
@@ -111,35 +113,15 @@ export function LeftMembersView() {
         joined_at: member.joined_at,
         left_at: member.left_at,
       }));
-      
       setMembers(mappedMembers);
-    } catch (error) {
-      console.error('[LEFT_MEMBERS_VIEW] Error fetching left members:', error);
-    } finally {
-      setLoading(false);
     }
-  }, [userId]);
-
-  const fetchCurrentUserClub = useCallback(async () => {
-    if (!userId) return;
-    
-    try {
-      const response = await fetch(`/api/user/club-by-user?user_id=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setClubName(data.club_name || null);
-      }
-    } catch (error) {
-      console.error('[LEFT_MEMBERS_VIEW] Error fetching current user club:', error);
-    }
-  }, [userId]);
+  }, [leftMembersData]);
 
   useEffect(() => {
-    if (userId !== null) {
-      fetchLeftMembers();
-      fetchCurrentUserClub();
+    if (clubData) {
+      setClubName(clubData.club_name);
     }
-  }, [fetchLeftMembers, fetchCurrentUserClub, userId]);
+  }, [clubData]);
 
   const dataFiltered = members
     .filter((member) => {

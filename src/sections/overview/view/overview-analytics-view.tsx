@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -10,6 +10,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
+import { useTRPC } from '@/trpc/client';
 
 import { AnalyticsCurrentVisits } from '../analytics-current-visits';
 import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
@@ -41,28 +42,8 @@ type DashboardStats = {
 };
 
 export function OverviewAnalyticsView() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchStats = useCallback(async () => {
-    try {
-      const response = await fetch('/api/dashboard/stats');
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      } else {
-        console.error('[DASHBOARD] Failed to fetch stats:', response.status);
-      }
-    } catch (error) {
-      console.error('[DASHBOARD] Error fetching stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchStats();
-  }, [fetchStats]);
+  const trpc = useTRPC();
+  const { data: stats, isLoading: loading } = useQuery(trpc.dashboard.getStats.queryOptions());
 
   // Calculate percentage change for stat cards
   const calculatePercentChange = (current: number, trend: number[]): number => {

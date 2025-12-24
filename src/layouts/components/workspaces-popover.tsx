@@ -2,8 +2,9 @@
 
 import type { ButtonBaseProps } from '@mui/material/ButtonBase';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { varAlpha } from 'minimal-shared/utils';
+import { useQuery } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Popover from '@mui/material/Popover';
@@ -13,6 +14,8 @@ import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { useTRPC } from '@/trpc/client';
+import { useUserRole } from 'src/hooks/use-user-role';
 
 // ----------------------------------------------------------------------
 
@@ -26,9 +29,48 @@ export type WorkspacesPopoverProps = ButtonBaseProps & {
 };
 
 export function WorkspacesPopover({ data = [], sx, ...other }: WorkspacesPopoverProps) {
-  const [workspace, setWorkspace] = useState(data[0]);
+  const trpc = useTRPC();
+  const { userId, isSuperAdmin } = useUserRole();
+  
+  // Fetch club name for admin users
+  const { data: clubData } = useQuery({
+    ...trpc.clubs.getCurrentUserClub.queryOptions(),
+    enabled: !!userId && !isSuperAdmin,
+  });
 
+  // Fetch all clubs for super admin
+  const { data: allClubsData } = useQuery({
+    ...trpc.clubs.getAllClubs.queryOptions(),
+    enabled: !!userId && isSuperAdmin,
+  });
+
+  // Determine workspace name based on role
+  const workspaceName = isSuperAdmin 
+    ? 'All Clubs' 
+    : (clubData?.club_name || 'My Club');
+
+  // Create dynamic workspace data
+  const dynamicWorkspace = {
+    id: 'current-club',
+    name: workspaceName,
+    plan: 'Active',
+    logo: '/assets/icons/workspaces/logo-1.webp',
+  };
+
+  const [workspace, setWorkspace] = useState(dynamicWorkspace);
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
+
+  // Update workspace when club data changes
+  useEffect(() => {
+    if (workspaceName) {
+      setWorkspace({
+        id: 'current-club',
+        name: workspaceName,
+        plan: 'Active',
+        logo: '/assets/icons/workspaces/logo-1.webp',
+      });
+    }
+  }, [workspaceName]);
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
@@ -112,6 +154,22 @@ export function WorkspacesPopover({ data = [], sx, ...other }: WorkspacesPopover
             },
           }}
         >
+          {/* Show current club/workspace */}
+          <MenuItem
+            key={workspace.id}
+            selected={true}
+            onClick={() => handleChangeWorkspace(workspace)}
+          >
+            {renderAvatar(workspace.name, workspace.logo)}
+
+            <Box component="span" sx={{ flexGrow: 1 }}>
+              {workspace.name}
+            </Box>
+
+            {renderLabel(workspace.plan)}
+          </MenuItem>
+          
+          {/* Show additional workspaces if provided */}
           {data.map((option) => (
             <MenuItem
               key={option.id}

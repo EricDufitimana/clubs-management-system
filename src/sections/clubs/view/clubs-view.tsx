@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -16,12 +17,11 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { activateClub } from 'src/actions/activateClub';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { deactivateClub } from 'src/actions/deactivateClub';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { useTRPC } from '@/trpc/client';
 
 import { useTable } from './use-table';
 import { TableNoData } from '../table-no-data';
@@ -43,6 +43,9 @@ const _clubs: ClubProps[] = [];
 
 export function ClubsView() {
   const table = useTable();
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  
   const [openDialog, setOpenDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openInviteDialog, setOpenInviteDialog] = useState(false);
@@ -55,7 +58,107 @@ export function ClubsView() {
     message: '',
     severity: 'success'
   });
-  const [loading, setLoading] = useState(true);
+  
+  // Fetch clubs using tRPC
+  const { data: clubsData, isLoading: loading } = useQuery({
+    ...trpc.clubs.getAllClubs.queryOptions(),
+  });
+
+  // Create club mutation
+  const createClubMutation = useMutation({
+    ...trpc.clubs.createClub.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Club added successfully!',
+        severity: 'success'
+      });
+      queryClient.invalidateQueries({ queryKey: trpc.clubs.getAllClubs.queryKey() });
+      handleCloseDialog();
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to add club',
+        severity: 'error'
+      });
+    },
+  });
+
+  // Update club mutation
+  const updateClubMutation = useMutation({
+    ...trpc.clubs.updateClub.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Club updated successfully!',
+        severity: 'success'
+      });
+      queryClient.invalidateQueries({ queryKey: trpc.clubs.getAllClubs.queryKey() });
+      handleCloseEditDialog();
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to update club',
+        severity: 'error'
+      });
+    },
+  });
+
+  // Deactivate club mutation
+  const deactivateClubMutation = useMutation({
+    ...trpc.clubs.deactivateClub.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Club deactivated successfully!',
+        severity: 'success'
+      });
+      queryClient.invalidateQueries({ queryKey: trpc.clubs.getAllClubs.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to deactivate club',
+        severity: 'error'
+      });
+    },
+  });
+
+  // Reactivate club mutation
+  const reactivateClubMutation = useMutation({
+    ...trpc.clubs.reactivateClub.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Club reactivated successfully!',
+        severity: 'success'
+      });
+      queryClient.invalidateQueries({ queryKey: trpc.clubs.getAllClubs.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to reactivate club',
+        severity: 'error'
+      });
+    },
+  });
+
+  // Update local state when data changes
+  useEffect(() => {
+    if (clubsData) {
+      const mappedClubs = clubsData.map((club: any) => ({
+        id: club.id,
+        name: club.club_name,
+        description: club.club_description,
+        members: 0, // TODO: Add members count when available
+        status: club.status === 'terminated' ? 'inactive' : club.status,
+      }));
+      setClubs(mappedClubs);
+    }
+  }, [clubsData]);
   
   const dataFiltered: ClubProps[] = applyFilter({
     inputData: clubs,
@@ -73,47 +176,10 @@ export function ClubsView() {
     setOpenDialog(false);
   }, []);
 
-  const fetchClubs = useCallback(async () => {
-    console.log('[FETCH_CLUBS] Client: Starting fetch request...');
-    try{
-      const response = await fetch('/api/clubs/fetch');
-      if(!response.ok){
-        throw new Error('Failed to fetch clubs');
-      }
-      const data = await response.json();
-      console.log('[FETCH_CLUBS] Client: Received', data.length, 'clubs');
-      // Map database fields to component props
-      const mappedClubs = data.map((club: any) => ({
-        id: club.id,
-        name: club.club_name,
-        description: club.club_description,
-        members: 0, // TODO: Add members count when available
-        status: club.status === 'terminated' ? 'inactive' : club.status,
-      }));
-      setClubs(mappedClubs);
-    }
-    catch(error){
-      console.error('[FETCH_CLUBS] Client: Error fetching clubs:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch clubs',
-        severity: 'error'
-      });
-    }
-    finally{
-      setLoading(false);
-    }
-  }, []);
-
   const handleAddClub = useCallback(() => {
-    setSnackbar({
-      open: true,
-      message: 'Club added successfully!',
-      severity: 'success'
-    });
+    // This will be handled by the dialog component calling createClubMutation
     handleCloseDialog();
-    fetchClubs();
-  }, [handleCloseDialog, fetchClubs]);
+  }, [handleCloseDialog]);
 
   const handleEdit = useCallback((club: ClubProps) => {
     setSelectedClub(club);
@@ -126,14 +192,9 @@ export function ClubsView() {
   }, []);
 
   const handleEditClub = useCallback(() => {
-    setSnackbar({
-      open: true,
-      message: 'Club updated successfully!',
-      severity: 'success'
-    });
+    // This will be handled by the dialog component calling updateClubMutation
     handleCloseEditDialog();
-    fetchClubs();
-  }, [handleCloseEditDialog, fetchClubs]);
+  }, [handleCloseEditDialog]);
 
   const handleError = useCallback((error: string) => {
     setSnackbar({
@@ -143,43 +204,31 @@ export function ClubsView() {
     });
   }, []);
 
-  const handleDeactivate = useCallback(async (clubId: string) => {
-    try {
-      const result = await deactivateClub(clubId);
-      if (result?.error) {
-        handleError(result.error);
-      } else if (result?.success) {
-        setSnackbar({
-          open: true,
-          message: 'Club deactivated successfully!',
-          severity: 'success'
-        });
-        fetchClubs();
-      }
-    } catch (error) {
-      console.error('[CLUBS_VIEW] Error deactivating club:', error);
-      handleError('An error occurred while deactivating the club');
-    }
-  }, [fetchClubs, handleError]);
+  const [loadingClubId, setLoadingClubId] = useState<string | null>(null);
 
-  const handleActivate = useCallback(async (clubId: string) => {
-    try {
-      const result = await activateClub(clubId);
-      if (result?.error) {
-        handleError(result.error);
-      } else if (result?.success) {
-        setSnackbar({
-          open: true,
-          message: 'Club activated successfully!',
-          severity: 'success'
-        });
-        fetchClubs();
+  const handleDeactivate = useCallback((clubId: string) => {
+    setLoadingClubId(clubId);
+    deactivateClubMutation.mutate(
+      { clubId },
+      {
+        onSettled: () => {
+          setLoadingClubId(null);
+        },
       }
-    } catch (error) {
-      console.error('[CLUBS_VIEW] Error activating club:', error);
-      handleError('An error occurred while activating the club');
-    }
-  }, [fetchClubs, handleError]);
+    );
+  }, [deactivateClubMutation]);
+
+  const handleActivate = useCallback((clubId: string) => {
+    setLoadingClubId(clubId);
+    reactivateClubMutation.mutate(
+      { clubId },
+      {
+        onSettled: () => {
+          setLoadingClubId(null);
+        },
+      }
+    );
+  }, [reactivateClubMutation]);
 
   const handleInvite = useCallback((clubId: string) => {
     // Find club name
@@ -207,9 +256,6 @@ export function ClubsView() {
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
 
-  useEffect(() => {
-    fetchClubs();
-  }, [fetchClubs]);
 
   return (
     <DashboardContent>
@@ -285,6 +331,7 @@ export function ClubsView() {
                       onDeactivate={handleDeactivate}
                       onActivate={handleActivate}
                       onInvite={handleInvite}
+                      isLoading={loadingClubId === row.id}
                     />
                   ))}
 

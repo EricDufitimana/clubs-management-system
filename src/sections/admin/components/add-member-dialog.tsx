@@ -27,6 +27,8 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
+import { useTRPC } from '@/trpc/client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // ----------------------------------------------------------------------
 
@@ -49,28 +51,24 @@ type AddMemberDialogProps = {
 };
 
 export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preloadedStudents }: AddMemberDialogProps) {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [students, setStudents] = useState<Student[]>(preloadedStudents || []);
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   const [existingMembers, setExistingMembers] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(false);
-  const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
-  // Fetch students only if not preloaded
-  const fetchStudents = useCallback(async () => {
-    if (!open || preloadedStudents) return;
-    
-    setFetching(true);
-    try {
-      const response = await fetch('/api/students/fetch');
-      if (!response.ok) {
-        throw new Error('Failed to fetch students');
-      }
-      const data = await response.json();
-      
-      const studentList: Student[] = data.map((student: any) => ({
+  // Fetch students using tRPC (only if not preloaded)
+  const { data: studentsData, isLoading: fetching } = useQuery({
+    ...trpc.students.getAllStudents.queryOptions(),
+    enabled: !!open && !preloadedStudents,
+  });
+
+  useEffect(() => {
+    if (studentsData) {
+      const studentList: Student[] = studentsData.map((student: any) => ({
         id: student.id,
         first_name: student.first_name,
         last_name: student.last_name,
@@ -78,17 +76,9 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
         combination: student.combination,
         gender: student.gender,
       }));
-      
       setStudents(studentList);
-    } catch (error) {
-      console.error('[ADD_MEMBER_DIALOG] Error fetching students:', error);
-      if (onError) {
-        onError('Failed to load students');
-      }
-    } finally {
-      setFetching(false);
     }
-  }, [open, onError, preloadedStudents]);
+  }, [studentsData]);
 
   // Update students when preloadedStudents prop changes
   useEffect(() => {
@@ -97,32 +87,62 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
     }
   }, [preloadedStudents]);
 
-  // Fetch existing members
-  const fetchExistingMembers = useCallback(async () => {
-    if (!open || !clubId) return;
-    
-    try {
-      const response = await fetch(`/api/club/members/check?club_id=${clubId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setExistingMembers(new Set(data.memberIds || []));
-      }
-    } catch (error) {
-      console.error('[ADD_MEMBER_DIALOG] Error fetching existing members:', error);
+  // Fetch existing members using tRPC
+  const { data: existingMembersData } = useQuery({
+    ...trpc.clubs.checkClubMembers.queryOptions({ clubId: clubId! }),
+    enabled: !!open && !!clubId,
+  });
+
+  useEffect(() => {
+    if (existingMembersData) {
+      setExistingMembers(new Set(existingMembersData.memberIds || []));
     }
-  }, [open, clubId]);
+  }, [existingMembersData]);
+
+  // Add members mutation
+  const addMembersMutation = useMutation({
+    ...trpc.clubs.addMembers.mutationOptions(),
+    onSuccess: (data) => {
+      setMessage({ 
+        type: 'success', 
+        text: data.message || `Successfully added ${data.added?.length || 0} student(s) to the club` 
+      });
+      
+      // Update existing members
+      if (data.added) {
+        setExistingMembers(prev => {
+          const newSet = new Set(prev);
+          data.added.forEach((id: string) => newSet.add(id));
+          return newSet;
+        });
+      }
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: trpc.users.getUsersByClub.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.clubs.checkClubMembers.queryKey({ clubId: clubId! }) });
+
+      // Clear selection after a delay
+      setTimeout(() => {
+        setSelectedStudents(new Set());
+        onAdd();
+        onClose();
+      }, 1500);
+    },
+    onError: (error: any) => {
+      setMessage({ type: 'error', text: error.message || 'Failed to add members' });
+      if (onError) {
+        onError(error.message || 'Failed to add members');
+      }
+    },
+  });
 
   useEffect(() => {
     if (open) {
-      fetchStudents();
-      if (clubId) {
-        fetchExistingMembers();
-      }
       setSearchQuery('');
       setSelectedStudents(new Set());
       setMessage(null);
     }
-  }, [open, fetchStudents, fetchExistingMembers, clubId]);
+  }, [open, clubId]);
 
   const handleToggleStudent = useCallback((studentId: string) => {
     setSelectedStudents(prev => {
@@ -159,74 +179,26 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
     setMessage(null);
   }, []);
 
-  const handleAddMembers = useCallback(async () => {
+  const handleAddMembers = useCallback(() => {
     if (selectedStudents.size === 0 || !clubId) {
       setMessage({ type: 'error', text: 'Please select at least one student' });
       return;
     }
 
-    setAdding(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch('/api/club/members/add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          studentIds: Array.from(selectedStudents),
-          clubId,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to add members');
-      }
-
-      if (data.success) {
-        setMessage({ 
-          type: 'success', 
-          text: data.message || `Successfully added ${data.added?.length || 0} student(s) to the club` 
-        });
-        
-        // Update existing members
-        if (data.added) {
-          setExistingMembers(prev => {
-            const newSet = new Set(prev);
-            data.added.forEach((id: string) => newSet.add(id));
-            return newSet;
-          });
-        }
-
-        // Clear selection after a delay
-        setTimeout(() => {
-          setSelectedStudents(new Set());
-          onAdd();
-          onClose();
-        }, 1500);
-      }
-    } catch (error: any) {
-      console.error('[ADD_MEMBER_DIALOG] Error adding members:', error);
-      setMessage({ type: 'error', text: error.message || 'Failed to add members' });
-      if (onError) {
-        onError(error.message || 'Failed to add members');
-      }
-    } finally {
-      setAdding(false);
-    }
-  }, [selectedStudents, clubId, onAdd, onClose, onError]);
+    addMembersMutation.mutate({
+      studentIds: Array.from(selectedStudents),
+      clubId,
+    });
+  }, [selectedStudents, clubId, addMembersMutation]);
 
   const handleClose = useCallback(() => {
-    if (!adding) {
+    if (!addMembersMutation.isPending) {
       setSearchQuery('');
       setSelectedStudents(new Set());
       setMessage(null);
       onClose();
     }
-  }, [adding, onClose]);
+  }, [addMembersMutation.isPending, onClose]);
 
   // Filter students based on search query
   const filteredStudents = students.filter(student => {
@@ -259,7 +231,7 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
                 </InputAdornment>
               ),
             }}
-            disabled={fetching || adding}
+            disabled={fetching || addMembersMutation.isPending}
           />
 
           {/* Message */}
@@ -278,7 +250,7 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
               <Button
                 size="small"
                 onClick={handleSelectAll}
-                disabled={fetching || adding}
+                disabled={fetching || addMembersMutation.isPending}
               >
                 {filteredSelected.length === availableStudents.length ? 'Deselect All' : 'Select All'}
               </Button>
@@ -320,7 +292,7 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
                         >
                           <ListItemButton
                             onClick={() => !isExistingMember && handleToggleStudent(student.id)}
-                            disabled={isExistingMember || adding}
+                            disabled={isExistingMember || addMembersMutation.isPending}
                             selected={isSelected}
                           >
                             <Checkbox
@@ -365,16 +337,16 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={adding}>
+        <Button onClick={handleClose} disabled={addMembersMutation.isPending}>
           Cancel
         </Button>
         <Button
           onClick={handleAddMembers}
           variant="contained"
-          disabled={selectedStudents.size === 0 || !clubId || adding}
-          startIcon={adding ? <CircularProgress size={20} color="inherit" /> : null}
+          disabled={selectedStudents.size === 0 || !clubId || addMembersMutation.isPending}
+          startIcon={addMembersMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
         >
-          {adding ? 'Adding...' : `Add ${selectedStudents.size} Member(s)`}
+          {addMembersMutation.isPending ? 'Adding...' : `Add ${selectedStudents.size} Member(s)`}
         </Button>
       </DialogActions>
     </Dialog>

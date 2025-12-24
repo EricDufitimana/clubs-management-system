@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -19,6 +20,7 @@ import { fDate } from 'src/utils/format-time';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
+import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
 
@@ -36,30 +38,21 @@ export function AttendanceSessionSelect() {
   const theme = useTheme();
   const router = useRouter();
   const { userId } = useUserRole();
+  const trpc = useTRPC();
   
   const [sessions, setSessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchSessions = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/sessions');
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data);
-      }
-    } catch (error) {
-      console.error('[ATTENDANCE_SELECT] Error fetching sessions:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  // Fetch sessions using tRPC
+  const { data: sessionsData, isLoading: loading } = useQuery({
+    ...trpc.sessions.getSessions.queryOptions(),
+    enabled: !!userId,
+  });
 
   useEffect(() => {
-    if (userId !== null) {
-      fetchSessions();
+    if (sessionsData) {
+      setSessions(sessionsData as any);
     }
-  }, [userId, fetchSessions]);
+  }, [sessionsData]);
 
   const getSessionColor = (index: number): 'primary' | 'secondary' | 'info' | 'success' | 'warning' => {
     const colors: Array<'primary' | 'secondary' | 'info' | 'success' | 'warning'> = [

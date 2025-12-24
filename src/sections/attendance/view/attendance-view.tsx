@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -27,6 +28,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { useTRPC } from '@/trpc/client';
 
 import { RecordAttendanceDialog } from '../components/record-attendance-dialog';
 
@@ -71,65 +73,62 @@ type AttendanceViewProps = {
 export function AttendanceView({ sessionId }: AttendanceViewProps = {} as AttendanceViewProps) {
   const theme = useTheme();
   const { userId } = useUserRole();
-  const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
 
-  // Fetch attendance records
-  const fetchAttendanceRecords = useCallback(async () => {
-    try {
-      const url = sessionId ? `/api/attendance?sessionId=${sessionId}` : '/api/attendance';
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
-        setAttendanceRecords(data);
-      }
-    } catch (error) {
-      console.error('[ATTENDANCE_VIEW] Error fetching attendance:', error);
-    }
-  }, [sessionId]);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  // Fetch students
-  const fetchStudents = useCallback(async () => {
-    if (!userId) return;
-    try {
-      const response = await fetch(`/api/students/fetch?user_id=${userId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setStudents(data);
-      }
-    } catch (error) {
-      console.error('[ATTENDANCE_VIEW] Error fetching students:', error);
-    }
-  }, [userId]);
+  // Fetch attendance records using tRPC
+  const { data: attendanceData, isLoading: loadingAttendance } = useQuery({
+    ...trpc.attendance.getAttendanceRecords.queryOptions(),
+    enabled: !!userId,
+  });
 
-  // Fetch sessions without attendance
-  const fetchSessionsWithoutAttendance = useCallback(async () => {
-    try {
-      const response = await fetch('/api/sessions/without-attendance');
-      if (response.ok) {
-        const data = await response.json();
-        setSessions(data);
-      }
-    } catch (error) {
-      console.error('[ATTENDANCE_VIEW] Error fetching sessions:', error);
+  // Fetch students using tRPC
+  const { data: studentsData, isLoading: loadingStudents } = useQuery({
+    ...trpc.users.getUsersByClub.queryOptions(),
+    enabled: !!userId,
+  });
+
+  // Fetch sessions without attendance using tRPC
+  const { data: sessionsData, isLoading: loadingSessions } = useQuery({
+    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions(),
+    enabled: !!userId && !sessionId,
+  });
+
+  const loading = loadingAttendance || loadingStudents || loadingSessions;
+
+  // Update local state when data changes
+  useEffect(() => {
+    if (attendanceData) {
+      setAttendanceRecords(attendanceData as any);
     }
-  }, []);
+  }, [attendanceData]);
 
   useEffect(() => {
-    if (userId !== null) {
-      setLoading(true);
-      Promise.all([
-        fetchAttendanceRecords(),
-        fetchStudents(),
-        ...(sessionId ? [] : [fetchSessionsWithoutAttendance()]),
-      ]).finally(() => {
-        setLoading(false);
-      });
+    if (studentsData) {
+      // Map user data to student format
+      const mappedStudents = studentsData.map((user: any) => ({
+        id: user.id,
+        first_name: user.name.split(' ')[0],
+        last_name: user.name.split(' ').slice(1).join(' '),
+        grade: user.role,
+        combination: user.company,
+        gender: undefined,
+        avatar: user.avatarUrl,
+      }));
+      setStudents(mappedStudents);
     }
-  }, [userId, sessionId, fetchAttendanceRecords, fetchStudents, fetchSessionsWithoutAttendance]);
+  }, [studentsData]);
+
+  useEffect(() => {
+    if (sessionsData) {
+      setSessions(sessionsData as any);
+    }
+  }, [sessionsData]);
 
   const handleOpenDialog = useCallback(() => {
     setOpenDialog(true);
@@ -138,16 +137,16 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
   const handleCloseDialog = useCallback(() => {
     setOpenDialog(false);
     // Refresh attendance records and sessions after closing dialog
-    fetchAttendanceRecords();
-    fetchSessionsWithoutAttendance();
-  }, [fetchAttendanceRecords, fetchSessionsWithoutAttendance]);
+    queryClient.invalidateQueries({ queryKey: trpc.attendance.getAttendanceRecords.queryKey() });
+    queryClient.invalidateQueries({ queryKey: trpc.sessions.getSessionsWithoutAttendance.queryKey() });
+  }, [queryClient, trpc]);
 
   const handleSubmitAttendance = useCallback((sessionId: string, attendanceData: Record<string, AttendanceStatus>) => {
     // Refresh attendance records after submission
-    fetchAttendanceRecords();
-    fetchSessionsWithoutAttendance();
+    queryClient.invalidateQueries({ queryKey: trpc.attendance.getAttendanceRecords.queryKey() });
+    queryClient.invalidateQueries({ queryKey: trpc.sessions.getSessionsWithoutAttendance.queryKey() });
     handleCloseDialog();
-  }, [fetchAttendanceRecords, fetchSessionsWithoutAttendance, handleCloseDialog]);
+  }, [queryClient, trpc, handleCloseDialog]);
 
   // Calculate statistics
   const presentCount = attendanceRecords.filter(r => r.status === 'present').length;

@@ -1,41 +1,14 @@
 'use client';
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+const testing = () => {
+  const trpc = useTRPC();
+  const { data } = useQuery(trpc.something.queryOptions({ text: "Eric" }));
+  return (
+    <div>
+      <h1>{JSON.stringify(data)}</h1>
+    </div>
+  )
+ }
 
-import { useState, useEffect } from "react";
-
-export default function TestingPage() {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch("https://jsonplaceholder.typicode.com/users");
-        if(!res.ok){
-            console.log("Fetch failed");
-        }
-        console.log("Res: ", res);
-        const data = await res.json();
-        setUsers(data)
-
-        console.log("Data: ", data);
-
-      } catch (error) {
-        console.log("Failed to fetch")
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-
-  },[]);
-  return <div>
-    {loading && <p>Loading...</p>}
-    <ul>
-        {users.map((user)=>(
-            <li>Name: {user.name}, Email: {user.email}</li>
-      ))}
-    </ul>
-
-  </div>;
-}
+ export default testing;

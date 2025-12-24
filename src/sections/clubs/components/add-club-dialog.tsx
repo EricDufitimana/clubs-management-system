@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
@@ -12,7 +13,7 @@ import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 import DialogContentText from '@mui/material/DialogContentText';
 
-import { addClub } from 'src/actions/addClub';
+import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
 
@@ -26,51 +27,45 @@ type AddClubDialogProps = {
 export function AddClubDialog({ open, onClose, onAdd, onError }: AddClubDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [loading, setLoading] = useState(false);
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
-  const handleSubmit = useCallback(async () => {
+  const createClubMutation = useMutation({
+    ...trpc.clubs.createClub.mutationOptions(),
+    onSuccess: () => {
+      // Reset form
+      setName('');
+      setDescription('');
+      queryClient.invalidateQueries({ queryKey: trpc.clubs.getAllClubs.queryKey() });
+      onAdd(); // Refresh the clubs list
+      onClose();
+    },
+    onError: (error: any) => {
+      console.error('[ADD_CLUB_DIALOG] Error:', error);
+      if (onError) {
+        onError(error.message || 'An error occurred while adding the club');
+      }
+    },
+  });
+
+  const handleSubmit = useCallback(() => {
     if (!name.trim() || !description.trim()) {
       return;
     }
 
-    setLoading(true);
-    
-    const formData = new FormData();
-    formData.append('name', name.trim());
-    formData.append('description', description.trim());
-
-    try {
-      const result = await addClub(formData);
-      
-      if (result?.error) {
-        console.error('[ADD_CLUB_DIALOG] Error:', result.error);
-        if (onError) {
-          onError(result.error);
-        }
-      } else if (result?.success) {
-        // Reset form
-        setName('');
-        setDescription('');
-        onAdd(); // Refresh the clubs list
-        onClose();
-      }
-    } catch (error) {
-      console.error('[ADD_CLUB_DIALOG] Exception:', error);
-      if (onError) {
-        onError('An error occurred while adding the club');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [name, description, onAdd, onClose, onError]);
+    createClubMutation.mutate({
+      club_name: name.trim(),
+      club_description: description.trim(),
+    });
+  }, [name, description, createClubMutation]);
 
   const handleClose = useCallback(() => {
-    if (!loading) {
+    if (!createClubMutation.isPending) {
       setName('');
       setDescription('');
       onClose();
     }
-  }, [loading, onClose]);
+  }, [createClubMutation.isPending, onClose]);
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -87,7 +82,7 @@ export function AddClubDialog({ open, onClose, onAdd, onError }: AddClubDialogPr
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            disabled={loading}
+            disabled={createClubMutation.isPending}
           />
           <TextField
             fullWidth
@@ -97,21 +92,21 @@ export function AddClubDialog({ open, onClose, onAdd, onError }: AddClubDialogPr
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
-            disabled={loading}
+            disabled={createClubMutation.isPending}
           />
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} disabled={loading}>
+        <Button onClick={handleClose} disabled={createClubMutation.isPending}>
           Cancel
         </Button>
         <Button 
           onClick={handleSubmit} 
           variant="contained" 
-          disabled={!name.trim() || !description.trim() || loading}
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : null}
+          disabled={!name.trim() || !description.trim() || createClubMutation.isPending}
+          startIcon={createClubMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
         >
-          {loading ? 'Adding...' : 'Add Club'}
+          {createClubMutation.isPending ? 'Adding...' : 'Add Club'}
         </Button>
       </DialogActions>
     </Dialog>
