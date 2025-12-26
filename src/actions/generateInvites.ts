@@ -46,7 +46,7 @@ export async function generateAndSendInvites(
       const dbInvite = await prisma.clubInvite.create({
         data: {
           club_id: BigInt(clubId),
-          role: invite.role, // Store the custom position title directly in role
+          role: (invite.role || null) as string | null, // Store the custom position title directly in role (String?)
           token,
           email: invite.email,
           expires_at: expiresAt
