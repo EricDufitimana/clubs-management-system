@@ -4,7 +4,7 @@ import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { CONFIG } from 'src/config-global';
 import { trpc, getQueryClient } from '@/trpc/server';
 
-import { LeftMembersView } from 'src/sections/user/view/left-members-view';
+import { LeftMembersView } from 'src/sections/member/view/left-members-view';
 
 // ----------------------------------------------------------------------
 

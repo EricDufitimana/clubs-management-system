@@ -16,6 +16,7 @@ import { RouterLink } from 'src/routes/components';
 
 import { Logo } from 'src/components/logo';
 import { Scrollbar } from 'src/components/scrollbar';
+import { ClubSelector } from '@/components/club-selector/club-selector';
 
 import { WorkspacesPopover } from '../components/workspaces-popover';
 
@@ -159,7 +160,10 @@ export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
 
       {slots?.topArea}
 
-      <WorkspacesPopover data={workspaces} sx={{ my: 2 }} />
+      {/* Club Selector in sidebar for mobile/small screens */}
+      <Box sx={{ my: 2 }}>
+        <ClubSelector variant="sidebar" />
+      </Box>
 
       <Scrollbar fillContent>
         <Box

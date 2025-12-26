@@ -21,7 +21,9 @@ export async function sendClubInvite({
       minute: '2-digit'
     });
 
-    // Create HTML email content
+    const currentYear = new Date().getFullYear();
+
+    // Create HTML email content (minimal, professional, text-forward)
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -29,31 +31,53 @@ export async function sendClubInvite({
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
         </head>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #2563eb;">You're Invited! 🎉</h1>
-          
-          <p>You've been invited to join <strong>${clubName}</strong> as the <strong>${role}</strong>.</p>
-          
-          <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <p style="margin: 0 0 15px 0;">Click the button below to accept your invitation:</p>
-            
-            <a 
-              href="${inviteLink}"
-              style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;"
-            >
-              Accept Invitation
-            </a>
+        <body style="margin:0;padding:0;background:#ffffff;">
+          <div style="font-family: Arial, Helvetica, sans-serif; max-width: 640px; margin: 0 auto; padding: 32px 20px; color:#111827; background:#ffffff;">
+            <h1 style="font-size:20px; margin:0 0 16px 0; font-weight:700;">
+              Invitation to manage ${clubName}
+            </h1>
+
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6;">
+              Hello,
+            </p>
+
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6;">
+ d              You’ve been invited to access the Clubs Management System for <strong>${clubName}</strong> as <strong>${role}</strong>.
+              This access is intended for club administration (managing club information and activity), not an appointment to an official title.
+            </p>
+
+            <p style="margin:0 0 10px 0; font-size:14px; line-height:1.6;">
+              With this access, you can:
+            </p>
+            <ul style="margin:0 0 16px 20px; padding:0; font-size:14px; line-height:1.8;">
+              <li>Manage members (add/remove and view member lists)</li>
+              <li>Create and manage sessions and events</li>
+              <li>Record and review attendance</li>
+              <li>Update club details and settings</li>
+              <li>View reports and analytics (where available)</li>
+            </ul>
+
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6;">
+              To accept this invitation and set up your account, use the link below:
+            </p>
+
+            <p style="margin:0 0 18px 0; font-size:14px; line-height:1.6;">
+              <a href="${inviteLink}" style="color:#111827; text-decoration:underline;">${inviteLink}</a>
+            </p>
+
+            <p style="margin:0 0 18px 0; font-size:14px; line-height:1.6;">
+              This invitation expires on <strong>${expiresAtFormatted}</strong>.
+            </p>
+
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+
+            <p style="margin:0 0 8px 0; font-size:12px; line-height:1.6; color:#6b7280;">
+              If you weren’t expecting this email, you can ignore it. No account will be created unless you accept the invitation.
+            </p>
+            <p style="margin:0; font-size:12px; line-height:1.6; color:#9ca3af;">
+              © ${currentYear} Clubs Management System
+            </p>
           </div>
-          
-          <p style="color: #6b7280; font-size: 14px;">
-            This invitation expires on ${expiresAtFormatted}
-          </p>
-          
-          <hr style="margin: 30px 0; border: none; border-top: 1px solid #e5e7eb;" />
-          
-          <p style="color: #9ca3af; font-size: 12px;">
-            If you didn't expect this invitation, you can safely ignore this email.
-          </p>
         </body>
       </html>
     `;

@@ -48,17 +48,6 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
   useEffect(() => {
     const fetchInviteInfo = async () => {
       try {
-        // Check if user is logged in
-        const supabase = createClient();
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          // Redirect to sign in with return URL
-          router.push(`/sign-in?redirect=/join-club/${token}/register`);
-          setLoading(false);
-          return;
-        }
-
         const result = await validateInvite(token);
         if (result.error) {
           setSnackbar({

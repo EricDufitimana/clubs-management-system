@@ -26,7 +26,7 @@ import { getAvatarUrl } from 'src/utils/get-avatar';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
-import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
+import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/member/utils/colors';
 import { useTRPC } from '@/trpc/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 

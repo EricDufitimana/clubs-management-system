@@ -22,8 +22,8 @@ export const adminNavItems: NavItem[] = [
     icon: <Icon icon="solar:widget-5-bold-duotone" width={24} height={24} />,
   },
   {
-    title: 'Users',
-    path: '/dashboard/admin/users',
+    title: 'Members',
+    path: '/dashboard/admin/members',
     icon: icon('ic-user'),
   },
   {
@@ -51,8 +51,8 @@ export const superAdminNavItems: NavItem[] = [
     icon: <Icon icon="solar:users-group-rounded-bold-duotone" width={24} height={24} />,
   },
   {
-    title: 'Users',
-    path: '/dashboard/super-admin/users',
+    title: 'Members',
+    path: '/dashboard/super-admin/members',
     icon: icon('ic-user'),
   },
   {

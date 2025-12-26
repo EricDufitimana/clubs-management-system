@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useMemo } from 'react';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -18,33 +18,35 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
+import Tooltip from '@mui/material/Tooltip';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { useTRPC } from 'src/trpc/client';
+import { useClubContext } from '@/contexts/club-context';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
-import { TableNoData } from 'src/sections/user/table-no-data';
-import { UserTableHead } from 'src/sections/user/user-table-head';
-import { TableEmptyRows } from 'src/sections/user/table-empty-rows';
-import { UserTableToolbar } from 'src/sections/user/user-table-toolbar';
-import { emptyRows, applyFilter, getComparator } from 'src/sections/user/utils';
+import { TableNoData } from 'src/sections/member/table-no-data';
+import { MemberTableHead } from 'src/sections/member/member-table-head';
+import { TableEmptyRows } from 'src/sections/member/table-empty-rows';
+import { MemberTableToolbar } from 'src/sections/member/member-table-toolbar';
+import { emptyRows, applyFilter, getComparator } from 'src/sections/member/utils';
 
 import { useTable } from './use-table';
 import { AddMemberDialog } from '../components/add-member-dialog';
 
 // ----------------------------------------------------------------------
 
-type UserData = {
+type MemberData = {
   id: string;
-  first_name: string;
-  last_name: string;
-  role: 'admin' | 'super_admin';
-  created_at: string;
-  club_name: string | null;
+  name: string;
+  role?: string;
+  status: 'active' | 'left';
+  company?: string;
   avatarUrl?: string;
+  club_name: string | null;
 };
 
 export function AdminUsersView() {
@@ -52,40 +54,73 @@ export function AdminUsersView() {
   const table = useTable();
   const [openDialog, setOpenDialog] = useState(false);
   const [filterName, setFilterName] = useState('');
-  const [users, setUsers] = useState<UserData[]>([]);
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
     message: '',
     severity: 'success'
   });
-  const [loading, setLoading] = useState(true);
   
-  const { data: clubData } = useQuery(trpc.clubs.getCurrentUserClub.queryOptions());
-  const currentUserClub = clubData?.club_name || null;
-  const currentUserClubId = clubData?.club_id || null;
+  // Use club context for selected club
+  const { selectedClub } = useClubContext();
+  const currentUserClub = selectedClub?.club_name || null;
+  const currentUserClubId = selectedClub?.id || null;
 
-  // Map user data to format expected by filter/comparator
-  const mappedUsers = users.map(user => {
-    const mapped = {
-      id: user.id,
-      name: `${user.first_name} ${user.last_name}`,
-      role: user.role,
-      status: 'active',
-      company: '-',
-      avatarUrl: user.avatarUrl || '',
-      isVerified: true,
-    };
-    console.log('[ADMIN_USERS] Mapped user:', mapped.name, 'Avatar URL:', mapped.avatarUrl);
-    return mapped;
+  // Fetch members using tRPC (filtered by selected club)
+  const { data: membersData, isLoading: loading, refetch } = useQuery({
+    ...trpc.users.getUsersByClub.queryOptions({ clubId: currentUserClubId || undefined }),
+    enabled: !!currentUserClubId,
   });
 
+  // Mark members as left mutation
+  const markAsLeftMutation = useMutation({
+    ...trpc.users.markMembersAsLeft.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Members marked as left successfully!',
+        severity: 'success'
+      });
+      table.onSelectAllRows(false, []);
+      refetch();
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to mark members as left',
+        severity: 'error'
+      });
+    },
+  });
+
+  // Filter out left members and filter by selected club
+  const activeMembers = useMemo(() => {
+    if (!membersData || !currentUserClubId) return [];
+    return membersData
+      .filter(member => member.status === 'active')
+      .filter(member => member.club_name === currentUserClub) // Filter by selected club
+      .map(member => ({
+        id: member.id,
+        name: member.name,
+        role: member.role || '-',
+        status: member.status,
+        company: member.company || '-',
+        avatarUrl: member.avatarUrl || '',
+        isVerified: true,
+      }));
+  }, [membersData, currentUserClubId, currentUserClub]);
+
   const dataFiltered = applyFilter({
-    inputData: mappedUsers,
+    inputData: activeMembers,
     comparator: getComparator(table.order, table.orderBy),
     filterName,
   });
 
   const notFound = !dataFiltered.length && !!filterName;
+
+  const handleMarkAsLeft = useCallback(() => {
+    if (table.selected.length === 0) return;
+    markAsLeftMutation.mutate({ memberIds: table.selected });
+  }, [table.selected, markAsLeftMutation]);
 
   const handleOpenDialog = useCallback(() => {
     setOpenDialog(true);
@@ -95,41 +130,15 @@ export function AdminUsersView() {
     setOpenDialog(false);
   }, []);
 
-  const fetchUsers = useCallback(async () => {
-    try {
-      const response = await fetch('/api/users/fetch');
-      if (!response.ok) {
-        throw new Error('Failed to fetch users');
-      }
-      const data = await response.json();
-      console.log('[ADMIN_USERS] Fetched users data:', data);
-      console.log('[ADMIN_USERS] Users with avatarUrl:', data.map((u: any) => ({
-        name: `${u.first_name} ${u.last_name}`,
-        id: u.id,
-        avatarUrl: u.avatarUrl
-      })));
-      setUsers(data);
-    } catch (error) {
-      console.error('[ADMIN_USERS] Error fetching users:', error);
-      setSnackbar({
-        open: true,
-        message: 'Failed to fetch users',
-        severity: 'error'
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   const handleAddUser = useCallback(() => {
     setSnackbar({
       open: true,
-      message: 'User added successfully!',
+      message: 'Member added successfully!',
       severity: 'success'
     });
     handleCloseDialog();
-    fetchUsers();
-  }, [handleCloseDialog, fetchUsers]);
+    refetch();
+  }, [handleCloseDialog, refetch]);
 
   const handleError = useCallback((error: string) => {
     setSnackbar({
@@ -143,10 +152,6 @@ export function AdminUsersView() {
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
   return (
     <DashboardContent>
       <Box
@@ -157,21 +162,36 @@ export function AdminUsersView() {
         }}
       >
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          User Management
+          Member Management
         </Typography>
-        <Button
-          variant="contained"
-          color="inherit"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenDialog}
-          disabled={!currentUserClubId}
-        >
-          Add Members
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          {table.selected.length > 0 && (
+            <Tooltip title="Mark selected members as left">
+              <Button
+                variant="contained"
+                color="warning"
+                startIcon={<Iconify icon="solar:logout-2-bold-duotone" />}
+                onClick={handleMarkAsLeft}
+                disabled={markAsLeftMutation.isPending}
+              >
+                Mark as Left ({table.selected.length})
+              </Button>
+            </Tooltip>
+          )}
+          <Button
+            variant="contained"
+            color="inherit"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenDialog}
+            disabled={!currentUserClubId}
+          >
+            Add Members
+          </Button>
+        </Box>
       </Box>
 
       <Card>
-        <UserTableToolbar
+        <MemberTableToolbar
           numSelected={table.selected.length}
           filterName={filterName}
           onFilterName={(event: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,75 +204,62 @@ export function AdminUsersView() {
         <Scrollbar>
           <TableContainer sx={{ overflow: 'unset' }}>
             <Table sx={{ minWidth: 800 }}>
-              <UserTableHead
+              <MemberTableHead
                 order={table.order}
                 orderBy={table.orderBy}
-                rowCount={users.length}
+                rowCount={activeMembers.length}
                 numSelected={table.selected.length}
                 onSort={table.onSort}
                 onSelectAllRows={(checked) =>
                   table.onSelectAllRows(
                     checked,
-                    users.map((user) => user.id)
+                    activeMembers.map((member) => member.id)
                   )
                 }
                 headLabel={[
                   { id: 'name', label: 'Name' },
-                  { id: 'role', label: 'Role' },
-                  { id: 'created_at', label: 'Created At' },
+                  { id: 'company', label: 'Combination' },
+                  { id: 'role', label: 'Grade' },
                   { id: 'status', label: 'Status' },
-                  { id: '' },
                 ]}
               />
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
+                    <TableCell colSpan={5} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
                 ) : dataFiltered
                   .slice(table.page * table.rowsPerPage, table.page * table.rowsPerPage + table.rowsPerPage)
-                  .map((row) => {
-                    const user = users.find(u => u.id === row.id);
-                    return (
-                      <TableRow key={row.id} hover tabIndex={-1} role="checkbox" selected={table.selected.includes(row.id)}>
-                        <TableCell padding="checkbox">
-                          <Checkbox disableRipple checked={table.selected.includes(row.id)} onChange={() => table.onSelectRow(row.id)} />
-                        </TableCell>
-                        <TableCell component="th" scope="row">
-                          <Box
-                            sx={{
-                              gap: 2,
-                              display: 'flex',
-                              alignItems: 'center',
-                            }}
-                          >
-                            <Avatar alt={row.name} src={row.avatarUrl} />
-                            {row.name}
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          <Label color={user?.role === 'super_admin' ? 'warning' : 'info'}>
-                            {user?.role === 'super_admin' ? 'Super Admin' : 'Admin'}
-                          </Label>
-                        </TableCell>
-                        <TableCell>
-                          {user ? new Date(user.created_at).toLocaleDateString() : '-'}
-                        </TableCell>
-                        <TableCell>
-                          <Label color="success">Active</Label>
-                        </TableCell>
-                        <TableCell align="right">
-                          {/* Actions can be added here */}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  .map((row) => (
+                    <TableRow key={row.id} hover tabIndex={-1} role="checkbox" selected={table.selected.includes(row.id)}>
+                      <TableCell padding="checkbox">
+                        <Checkbox disableRipple checked={table.selected.includes(row.id)} onChange={() => table.onSelectRow(row.id)} />
+                      </TableCell>
+                      <TableCell component="th" scope="row">
+                        <Box
+                          sx={{
+                            gap: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <Avatar alt={row.name} src={row.avatarUrl} />
+                          {row.name}
+                        </Box>
+                      </TableCell>
+                      <TableCell>{row.company}</TableCell>
+                      <TableCell>{row.role}</TableCell>
+                      <TableCell>
+                        <Label color="success">Active</Label>
+                      </TableCell>
+                    </TableRow>
+                  ))}
 
                 <TableEmptyRows
                   height={77}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, users.length)}
+                  emptyRows={emptyRows(table.page, table.rowsPerPage, activeMembers.length)}
                 />
 
                 {notFound && <TableNoData searchQuery={filterName} />}
@@ -264,7 +271,7 @@ export function AdminUsersView() {
         <TablePagination
           page={table.page}
           component="div"
-          count={users.length}
+          count={activeMembers.length}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}
           rowsPerPageOptions={[5, 10, 25]}

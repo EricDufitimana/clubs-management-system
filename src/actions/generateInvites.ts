@@ -7,7 +7,7 @@ import { sendClubInvite } from '../lib/email';
 import { createClient } from '../utils/supabase/server';
 
 interface InviteInput {
-  role: 'president' | 'vice_president' | 'secretary';
+  role: string; // Now accepts any position title
   email: string;
   name?: string;
 }
@@ -46,7 +46,7 @@ export async function generateAndSendInvites(
       const dbInvite = await prisma.clubInvite.create({
         data: {
           club_id: BigInt(clubId),
-          role: invite.role,
+          role: invite.role, // Store the custom position title directly in role
           token,
           email: invite.email,
           expires_at: expiresAt
@@ -55,10 +55,8 @@ export async function generateAndSendInvites(
       
       const inviteLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/join-club/${token}`;
       
-      // Format role name for display
-      const roleDisplayName = invite.role === 'vice_president' 
-        ? 'Vice President' 
-        : invite.role.charAt(0).toUpperCase() + invite.role.slice(1);
+      // Use the role as the display name (it's already the position title)
+      const roleDisplayName = invite.role;
       
       // Send email
       const emailResult = await sendClubInvite({
@@ -71,6 +69,7 @@ export async function generateAndSendInvites(
       
       results.push({
         role: invite.role,
+        name: invite.name,
         email: invite.email,
         link: inviteLink,
         emailSent: !emailResult.error,

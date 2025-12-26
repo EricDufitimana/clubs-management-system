@@ -55,50 +55,112 @@ export async function completeInviteRegistration(
       return { error: 'Email must match the invitation email' };
     }
 
-    // 3. Sign up the user
-    console.log('[INVITE_REGISTRATION] Creating new user account...');
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
+    // 3. Check if user already exists in Supabase Auth
+    console.log('[INVITE_REGISTRATION] Checking for existing user...');
+    const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = existingAuthUsers?.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+
+    let authUserId: string;
+    let dbUser: any;
+    let isNewUser = false;
+
+    if (existingAuthUser) {
+      // User already exists in Auth, use their ID
+      console.log('[INVITE_REGISTRATION] Found existing auth user:', existingAuthUser.id);
+      authUserId = existingAuthUser.id;
+
+      // Check if user exists in database
+      dbUser = await prisma.user.findUnique({
+        where: { auth_user_id: authUserId }
+      });
+
+      if (!dbUser) {
+        // Create database record for existing auth user
+        console.log('[INVITE_REGISTRATION] Creating database record for existing auth user...');
+        dbUser = await prisma.user.create({
+          data: {
+            auth_user_id: authUserId,
+            first_name: first_name.trim(),
+            last_name: last_name.trim(),
+            role: 'admin'
+          }
+        });
+      }
+
+      console.log('[INVITE_REGISTRATION] Using existing user with ID:', dbUser.id);
+    } else {
+      // New user, create account
+      console.log('[INVITE_REGISTRATION] Creating new user account...');
+      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: first_name.trim(),
+            last_name: last_name.trim(),
+            display_name: `${first_name.trim()} ${last_name.trim()}`.trim()
+          }
+        }
+      });
+
+      if (signUpError) {
+        console.error('[INVITE_REGISTRATION] Signup error:', signUpError);
+        return { error: signUpError.message || 'Failed to create account' };
+      }
+
+      if (!signUpData.user) {
+        return { error: 'Failed to create user account' };
+      }
+
+      authUserId = signUpData.user.id;
+      console.log('[INVITE_REGISTRATION] User created with ID:', authUserId);
+
+      // 4. Create user in users table
+      console.log('[INVITE_REGISTRATION] Creating user record in database...');
+      dbUser = await prisma.user.create({
         data: {
+          auth_user_id: authUserId,
           first_name: first_name.trim(),
           last_name: last_name.trim(),
-          display_name: `${first_name.trim()} ${last_name.trim()}`.trim()
+          role: 'admin' // Default role for club officers
         }
-      }
-    });
+      });
 
-    if (signUpError) {
-      console.error('[INVITE_REGISTRATION] Signup error:', signUpError);
-      return { error: signUpError.message || 'Failed to create account' };
+      console.log('[INVITE_REGISTRATION] User record created with ID:', dbUser.id);
+      isNewUser = true;
     }
 
-    if (!signUpData.user) {
-      return { error: 'Failed to create user account' };
+    // 5. Check if user is already a leader for this club
+    const existingLeader = await prisma.$queryRaw<Array<{id: bigint}>>`
+      SELECT id FROM club_leaders 
+      WHERE club_id = ${invite.club_id}::bigint 
+      AND user_id = ${dbUser.id}::bigint
+    `;
+
+    if (existingLeader && existingLeader.length > 0) {
+      // User is already a leader of this club, just mark invite as used
+      await prisma.clubInvite.update({
+        where: { id: invite.id },
+        data: { used_at: new Date() }
+      });
+      
+      return {
+        success: true,
+        message: `You are already a leader of ${club.club_name}`,
+        clubId: invite.club_id.toString(),
+        userId: authUserId,
+        existingMember: true
+      };
     }
 
-    const authUserId = signUpData.user.id;
-    console.log('[INVITE_REGISTRATION] User created with ID:', authUserId);
-
-    // 4. Create user in users table
-    console.log('[INVITE_REGISTRATION] Creating user record in database...');
-    const dbUser = await prisma.user.create({
-      data: {
-        auth_user_id: authUserId,
-        first_name: first_name.trim(),
-        last_name: last_name.trim(),
-        role: 'admin' // Default role for club officers
-      }
-    });
-
-    console.log('[INVITE_REGISTRATION] User record created with ID:', dbUser.id);
-
-    // 5. Create club leader record
+    // Create club leader record
     console.log('[INVITE_REGISTRATION] Adding user as club leader...');
     
+    // Default role if none specified
+    const role = invite.role || 'secretary';
+    
     // Convert Prisma enum to database enum
-    const dbRoleValue = invite.role === 'vice_president' ? 'vice-president' : invite.role;
+    const dbRoleValue = role === 'vice_president' ? 'vice-president' : role;
 
     await prisma.$executeRaw`
       INSERT INTO club_leaders (club_id, user_id, role, created_at)
@@ -116,15 +178,20 @@ export async function completeInviteRegistration(
     console.log('[INVITE_REGISTRATION] Invite marked as used');
 
     // Format role name for display
-    const roleDisplayName = invite.role === 'vice_president' 
+    const roleDisplayName = role === 'vice_president' 
       ? 'Vice President' 
-      : invite.role.charAt(0).toUpperCase() + invite.role.slice(1);
+      : role.charAt(0).toUpperCase() + role.slice(1);
+
+    const message = isNewUser 
+      ? `Account created! You've joined ${club.club_name} as ${roleDisplayName}`
+      : `You've been added to ${club.club_name} as ${roleDisplayName}`;
 
     return { 
       success: true, 
-      message: `Account created! You've joined ${club.club_name} as ${roleDisplayName}`,
+      message,
       clubId: invite.club_id.toString(),
-      userId: authUserId
+      userId: authUserId,
+      isNewUser
     };
 
   } catch (error: any) {
@@ -132,11 +199,14 @@ export async function completeInviteRegistration(
     
     // Handle specific error cases
     if (error.code === 'P2002') {
-      return { error: 'An account with this email already exists' };
+      // Check if it's a duplicate club_leaders entry
+      if (error.meta?.target?.includes('user_id') && error.meta?.target?.includes('club_id')) {
+        return { error: 'You are already a leader of this club' };
+      }
     }
     
     if (error.message?.includes('duplicate')) {
-      return { error: 'You are already registered for this club' };
+      return { error: 'You are already a leader of this club' };
     }
     
     return { error: 'Failed to complete registration. Please try again.' };

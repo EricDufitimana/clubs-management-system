@@ -6,9 +6,15 @@ import { getAvatarUrl } from '@/utils/get-avatar';
 
 export const attendanceRouter = createTRPCRouter({
   /**
-   * Get all attendance records for user's clubs
+   * Get all attendance records for a specific club or user's clubs
    */
-  getAttendanceRecords: adminProcedure.query(async ({ ctx }) => {
+  getAttendanceRecords: adminProcedure
+    .input(
+      z.object({
+        clubId: z.string().optional(),
+      }).optional()
+    )
+    .query(async ({ input, ctx }) => {
     try {
       const { clubIds } = ctx;
 
@@ -16,11 +22,22 @@ export const attendanceRouter = createTRPCRouter({
         return [];
       }
 
+      // If clubId is provided, filter by that specific club
+      const targetClubId = input?.clubId ? BigInt(input.clubId) : null;
+      
+      // Verify user has access to the requested club
+      if (targetClubId && !clubIds.includes(targetClubId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to view attendance for this club',
+        });
+      }
+
       // Fetch attendance records with joins to get student and session info
       const attendanceRecords = await prisma.attendance.findMany({
         where: {
           session: {
-            club_id: { in: clubIds },
+            club_id: targetClubId ? targetClubId : { in: clubIds },
           },
         },
         include: {
@@ -64,6 +81,11 @@ export const attendanceRouter = createTRPCRouter({
       });
     } catch (error: any) {
       console.error('[ATTENDANCE] Error fetching attendance records:', error);
+      
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: error?.message || 'Failed to fetch attendance records',

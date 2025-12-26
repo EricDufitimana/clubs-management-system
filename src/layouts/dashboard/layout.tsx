@@ -28,6 +28,7 @@ import { HeaderSection } from '../core/header-section';
 import { LayoutSection } from '../core/layout-section';
 import { AccountPopover } from '../components/account-popover';
 import { NotificationsPopover } from '../components/notifications-popover';
+import { ClubSelectorHeader } from '@/components/club-selector/club-selector-header';
 
 import type { MainSectionProps } from '../core/main-section';
 import type { HeaderSectionProps } from '../core/header-section';
@@ -98,6 +99,13 @@ export function DashboardLayout({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
           {/** @slot Searchbar */}
           <Searchbar />
+
+          {/** @slot Club Selector (desktop only) */}
+          {role === 'admin' && (
+            <Box sx={{ display: { xs: 'none', [layoutQuery]: 'block' } }}>
+              <ClubSelectorHeader />
+            </Box>
+          )}
 
           {/** @slot Notifications popover */}
           <NotificationsPopover data={_notifications} />

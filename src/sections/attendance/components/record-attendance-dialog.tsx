@@ -27,7 +27,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { useTRPC } from '@/trpc/client';
 
-import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
+import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/member/utils/colors';
 
 // ----------------------------------------------------------------------
 

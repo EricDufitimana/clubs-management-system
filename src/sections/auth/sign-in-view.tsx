@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
@@ -16,6 +16,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
+import { useSearchParams } from 'next/navigation';
 
 import { login } from 'src/actions/login';
 
@@ -26,6 +27,8 @@ import { useTRPC } from '@/trpc/client';
 
 export function SignInView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
 
   const [showPassword, setShowPassword] = useState(false);
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
@@ -43,8 +46,10 @@ export function SignInView() {
         message: 'Login successful',
         severity: 'success'
       });
-      // Handle redirect on client side
-      if (data?.redirectPath) {
+      // Handle redirect on client side - use custom redirect if available
+      if (redirectUrl) {
+        router.push(redirectUrl);
+      } else if (data?.redirectPath) {
         router.push(data.redirectPath);
       }
     },

@@ -5,9 +5,15 @@ import { TRPCError } from '@trpc/server';
 
 export const sessionsRouter = createTRPCRouter({
   /**
-   * Get all sessions for user's clubs
+   * Get all sessions for a specific club or user's clubs
    */
-  getSessions: adminProcedure.query(async ({ ctx }) => {
+  getSessions: adminProcedure
+    .input(
+      z.object({
+        clubId: z.string().optional(),
+      }).optional()
+    )
+    .query(async ({ input, ctx }) => {
     try {
       const { clubIds } = ctx;
 
@@ -15,9 +21,20 @@ export const sessionsRouter = createTRPCRouter({
         return [];
       }
 
+      // If clubId is provided, filter by that specific club
+      const targetClubId = input?.clubId ? BigInt(input.clubId) : null;
+      
+      // Verify user has access to the requested club
+      if (targetClubId && !clubIds.includes(targetClubId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to view sessions for this club',
+        });
+      }
+
       const sessions = await prisma.session.findMany({
         where: {
-          club_id: { in: clubIds },
+          club_id: targetClubId ? targetClubId : { in: clubIds },
         },
         include: {
           club: {
@@ -40,6 +57,11 @@ export const sessionsRouter = createTRPCRouter({
       }));
     } catch (error: any) {
       console.error('[SESSIONS] Error fetching sessions:', error);
+      
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: error?.message || 'Failed to fetch sessions',
@@ -48,9 +70,15 @@ export const sessionsRouter = createTRPCRouter({
   }),
 
   /**
-   * Get sessions without attendance records
+   * Get sessions without attendance records for a specific club or user's clubs
    */
-  getSessionsWithoutAttendance: adminProcedure.query(async ({ ctx }) => {
+  getSessionsWithoutAttendance: adminProcedure
+    .input(
+      z.object({
+        clubId: z.string().optional(),
+      }).optional()
+    )
+    .query(async ({ input, ctx }) => {
     try {
       const { clubIds } = ctx;
 
@@ -58,10 +86,21 @@ export const sessionsRouter = createTRPCRouter({
         return [];
       }
 
+      // If clubId is provided, filter by that specific club
+      const targetClubId = input?.clubId ? BigInt(input.clubId) : null;
+      
+      // Verify user has access to the requested club
+      if (targetClubId && !clubIds.includes(targetClubId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to view sessions for this club',
+        });
+      }
+
       // Get sessions that don't have any attendance records
       const sessions = await prisma.session.findMany({
         where: {
-          club_id: { in: clubIds },
+          club_id: targetClubId ? targetClubId : { in: clubIds },
           attendance: {
             none: {},
           },
@@ -87,6 +126,11 @@ export const sessionsRouter = createTRPCRouter({
       }));
     } catch (error: any) {
       console.error('[SESSIONS] Error fetching sessions without attendance:', error);
+      
+      if (error instanceof TRPCError) {
+        throw error;
+      }
+      
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: error?.message || 'Failed to fetch sessions',

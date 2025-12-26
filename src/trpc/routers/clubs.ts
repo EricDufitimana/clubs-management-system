@@ -262,6 +262,53 @@ export const clubsRouter = createTRPCRouter({
     }),
 
   /**
+   * Get club invitations
+   */
+  getClubInvites: adminProcedure
+    .input(z.object({ clubId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      try {
+        const { clubId } = input;
+        const clubIdBigInt = BigInt(clubId);
+
+        // Verify user has access to this club
+        if (!ctx.clubIds.includes(clubIdBigInt)) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'You do not have permission to view invitations for this club',
+          });
+        }
+
+        const invites = await prisma.clubInvite.findMany({
+          where: { club_id: clubIdBigInt },
+          orderBy: { created_at: 'desc' },
+        });
+
+        return invites.map(invite => ({
+          id: invite.id.toString(),
+          email: invite.email,
+          role: invite.role || 'Position', // role now contains the position title
+          createdAt: invite.created_at.toISOString(),
+          expiresAt: invite.expires_at.toISOString(),
+          usedAt: invite.used_at?.toISOString() || null,
+          isExpired: invite.expires_at < new Date(),
+          isUsed: !!invite.used_at,
+        }));
+      } catch (error: any) {
+        console.error('[CLUBS] Error fetching club invites:', error);
+
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error?.message || 'Failed to fetch club invites',
+        });
+      }
+    }),
+
+  /**
    * Add members to a club
    */
   addMembers: adminProcedure

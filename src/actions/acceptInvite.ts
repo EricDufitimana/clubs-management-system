@@ -67,21 +67,32 @@ export async function acceptInvite(token: string) {
     `;
 
     if (existingLeader && existingLeader.length > 0) {
-      // Mark invite as used
-      await prisma.clubInvite.update({
-        where: { id: invite.id },
-        data: { used_at: new Date() }
-      });
       return { error: 'You are already a leader of this club' };
     }
 
-    // Create club leader record using raw query
-    await prisma.$executeRaw`
-      INSERT INTO club_leaders (club_id, user_id, role, created_at)
-      VALUES (${invite.club_id}::bigint, ${dbUser.id}::bigint, ${invite.role}::role, NOW())
-    `;
+    // Create club leader record
+    // Map custom position title to ClubLeaderRole enum
+    // Default to 'president' if no role specified or if it's a custom title
+    const roleMapping: Record<string, 'president' | 'vice_president' | 'secretary'> = {
+      'president': 'president',
+      'vice president': 'vice_president',
+      'vice-president': 'vice_president',
+      'secretary': 'secretary',
+    };
+    
+    const normalizedRole = invite.role?.toLowerCase() || '';
+    const mappedRole = roleMapping[normalizedRole] || 'president';
+    
+    await prisma.clubLeader.create({
+      data: {
+        club_id: invite.club_id,
+        user_id: dbUser.id,
+        role: mappedRole,
+        created_at: new Date(),
+      }
+    });
 
-    // Mark invite as used
+    // Mark invite as used AFTER successfully creating the club leader
     await prisma.clubInvite.update({
       where: { id: invite.id },
       data: { used_at: new Date() }
@@ -92,8 +103,16 @@ export async function acceptInvite(token: string) {
       message: `Successfully joined ${club.club_name} as ${invite.role}`,
       clubId: invite.club_id.toString()
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[ACCEPT_INVITE] Error:', error);
+    
+    // Handle duplicate constraint errors
+    if (error.code === 'P2002') {
+      if (error.meta?.target?.includes('user_id') && error.meta?.target?.includes('club_id')) {
+        return { error: 'You are already a leader of this club' };
+      }
+    }
+    
     return { error: 'Failed to accept invitation' };
   }
 }

@@ -1,18 +1,37 @@
+import { z } from "zod";
 import { createTRPCRouter, adminProcedure } from "../init";
 import { prisma } from "@/lib/prisma";
 import { getAvatarUrl } from "@/utils/get-avatar";
+import { TRPCError } from "@trpc/server";
 
 export const usersRouter = createTRPCRouter({
-    getUsersByClub: adminProcedure.query(async({ctx}) => {
+    getUsersByClub: adminProcedure
+        .input(
+            z.object({
+                clubId: z.string().optional(),
+            }).optional()
+        )
+        .query(async({input, ctx}) => {
         const {clubIds} = ctx;
         if (clubIds.length === 0) {
             return [];
         }
 
+        // If clubId is provided, filter by that specific club
+        const targetClubId = input?.clubId ? BigInt(input.clubId) : null;
+        
+        // Verify user has access to the requested club
+        if (targetClubId && !clubIds.includes(targetClubId)) {
+            throw new TRPCError({
+                code: 'FORBIDDEN',
+                message: 'You do not have permission to view members for this club',
+            });
+        }
+
         // Get all club members for the user's clubs
         const clubMembers = await prisma.clubMember.findMany({
             where: {
-                club_id: { in: clubIds }
+                club_id: targetClubId ? targetClubId : { in: clubIds }
             },
             include: {
                 student: true,
@@ -130,16 +149,33 @@ export const usersRouter = createTRPCRouter({
         });
     }),
 
-    getLeftMembers: adminProcedure.query(async({ctx}) => {
+    getLeftMembers: adminProcedure
+        .input(
+            z.object({
+                clubId: z.string().optional(),
+            }).optional()
+        )
+        .query(async({input, ctx}) => {
         const {clubIds} = ctx;
         if (clubIds.length === 0) {
             return [];
         }
 
+        // If clubId is provided, filter by that specific club
+        const targetClubId = input?.clubId ? BigInt(input.clubId) : null;
+        
+        // Verify user has access to the requested club
+        if (targetClubId && !clubIds.includes(targetClubId)) {
+            throw new TRPCError({
+                code: 'FORBIDDEN',
+                message: 'You do not have permission to view left members for this club',
+            });
+        }
+
         // Get left members with their join and leave dates
         const leftMembers = await prisma.clubMember.findMany({
             where: {
-                club_id: { in: clubIds },
+                club_id: targetClubId ? targetClubId : { in: clubIds },
                 membership_status: 'left',
             },
             include: {
@@ -170,4 +206,46 @@ export const usersRouter = createTRPCRouter({
                 };
             });
     }),
+
+    markMembersAsLeft: adminProcedure
+        .input(z.object({
+            memberIds: z.array(z.string()),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const { clubIds } = ctx;
+            const { memberIds } = input;
+
+            if (clubIds.length === 0) {
+                throw new TRPCError({
+                    code: 'FORBIDDEN',
+                    message: 'No club access',
+                });
+            }
+
+            try {
+                // Update club members to mark as left
+                const result = await prisma.clubMember.updateMany({
+                    where: {
+                        student_id: { in: memberIds.map(id => BigInt(id)) },
+                        club_id: { in: clubIds },
+                        membership_status: 'active',
+                    },
+                    data: {
+                        membership_status: 'left',
+                        left_at: new Date(),
+                    },
+                });
+
+                return {
+                    success: true,
+                    count: result.count,
+                };
+            } catch (error) {
+                console.error('[MARK_AS_LEFT] Error:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to mark members as left',
+                });
+            }
+        }),
 })

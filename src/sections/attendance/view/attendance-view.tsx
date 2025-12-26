@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
@@ -18,8 +18,14 @@ import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import MenuItem from '@mui/material/MenuItem';
+import TablePagination from '@mui/material/TablePagination';
+import Chip from '@mui/material/Chip';
 
 import { useUserRole } from 'src/hooks/use-user-role';
+import { useClubContext } from 'src/contexts/club-context';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -73,30 +79,39 @@ type AttendanceViewProps = {
 export function AttendanceView({ sessionId }: AttendanceViewProps = {} as AttendanceViewProps) {
   const theme = useTheme();
   const { userId } = useUserRole();
+  const { selectedClub } = useClubContext();
   const [openDialog, setOpenDialog] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
+  
+  // Filter and pagination states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSession, setSelectedSession] = useState<string>('all');
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Fetch attendance records using tRPC
+  // Fetch attendance records using tRPC - filtered by selected club
   const { data: attendanceData, isLoading: loadingAttendance } = useQuery({
-    ...trpc.attendance.getAttendanceRecords.queryOptions(),
-    enabled: !!userId,
+    ...trpc.attendance.getAttendanceRecords.queryOptions({ clubId: selectedClub?.id }),
+    enabled: !!userId && !!selectedClub?.id,
   });
 
-  // Fetch students using tRPC
+  // Fetch students using tRPC - filtered by selected club
   const { data: studentsData, isLoading: loadingStudents } = useQuery({
-    ...trpc.users.getUsersByClub.queryOptions(),
-    enabled: !!userId,
+    ...trpc.users.getUsersByClub.queryOptions({ clubId: selectedClub?.id }),
+    enabled: !!userId && !!selectedClub?.id,
   });
 
-  // Fetch sessions without attendance using tRPC
+  // Fetch sessions without attendance using tRPC - filtered by selected club
   const { data: sessionsData, isLoading: loadingSessions } = useQuery({
-    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions(),
-    enabled: !!userId && !sessionId,
+    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions({ clubId: selectedClub?.id }),
+    enabled: !!userId && !!selectedClub?.id && !sessionId,
   });
 
   const loading = loadingAttendance || loadingStudents || loadingSessions;
@@ -148,11 +163,78 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
     handleCloseDialog();
   }, [queryClient, trpc, handleCloseDialog]);
 
-  // Calculate statistics
-  const presentCount = attendanceRecords.filter(r => r.status === 'present').length;
-  const absentCount = attendanceRecords.filter(r => r.status === 'absent').length;
-  const excusedCount = attendanceRecords.filter(r => r.status === 'excused').length;
-  const totalRecords = attendanceRecords.length;
+  // Filter attendance records
+  const filteredRecords = useMemo(() => {
+    let filtered = [...attendanceRecords];
+    
+    // Search filter
+    if (searchQuery) {
+      filtered = filtered.filter(record =>
+        record.student_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        record.session_name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    
+    // Session filter
+    if (selectedSession !== 'all') {
+      filtered = filtered.filter(record => record.session_id === selectedSession);
+    }
+    
+    // Date range filter
+    if (startDate) {
+      const start = new Date(startDate).getTime();
+      filtered = filtered.filter(record => new Date(record.session_date).getTime() >= start);
+    }
+    
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(record => new Date(record.session_date).getTime() <= end.getTime());
+    }
+    
+    return filtered;
+  }, [attendanceRecords, searchQuery, selectedSession, startDate, endDate]);
+
+  // Paginate records
+  const paginatedRecords = useMemo(() => {
+    const startIndex = page * rowsPerPage;
+    return filteredRecords.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredRecords, page, rowsPerPage]);
+
+  // Get unique sessions for filter dropdown
+  const sessionOptions = useMemo(() => {
+    const uniqueSessions = Array.from(
+      new Map(attendanceRecords.map(r => [r.session_id, { id: r.session_id, name: r.session_name, date: r.session_date }])).values()
+    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return [
+      { id: 'all', name: 'All Sessions' },
+      ...uniqueSessions,
+    ];
+  }, [attendanceRecords]);
+
+  const handleChangePage = useCallback((_: unknown, newPage: number) => {
+    setPage(newPage);
+  }, []);
+
+  const handleChangeRowsPerPage = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery('');
+    setSelectedSession('all');
+    setStartDate('');
+    setEndDate('');
+    setPage(0);
+  }, []);
+
+  // Calculate statistics (based on filtered records)
+  const presentCount = filteredRecords.filter(r => r.status === 'present').length;
+  const absentCount = filteredRecords.filter(r => r.status === 'absent').length;
+  const excusedCount = filteredRecords.filter(r => r.status === 'excused').length;
+  const totalRecords = filteredRecords.length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
 
   const getInitials = (firstName: string, lastName: string) => `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
@@ -360,9 +442,91 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
         {/* Attendance Records Table */}
         <Card>
           <Box sx={{ p: 3 }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Attendance History
-            </Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6">
+                Attendance History
+              </Typography>
+              {(searchQuery || selectedSession !== 'all' || startDate || endDate) && (
+                <Chip
+                  label="Clear Filters"
+                  onDelete={handleClearFilters}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                />
+              )}
+            </Box>
+
+            {/* Filters Row */}
+            <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 3 }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search by student or session..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setPage(0);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" width={20} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <TextField
+                select
+                size="small"
+                value={selectedSession}
+                onChange={(e) => {
+                  setSelectedSession(e.target.value);
+                  setPage(0);
+                }}
+                sx={{ minWidth: { xs: '100%', md: 200 } }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="solar:document-text-bold-duotone" width={20} />
+                    </InputAdornment>
+                  ),
+                }}
+              >
+                {sessionOptions.map((option) => (
+                  <MenuItem key={option.id} value={option.id}>
+                    {option.name}
+                  </MenuItem>
+                ))}
+              </TextField>
+
+              <TextField
+                type="date"
+                size="small"
+                label="From Date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setPage(0);
+                }}
+                sx={{ minWidth: { xs: '100%', md: 160 } }}
+                InputLabelProps={{ shrink: true }}
+              />
+
+              <TextField
+                type="date"
+                size="small"
+                label="To Date"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setPage(0);
+                }}
+                sx={{ minWidth: { xs: '100%', md: 160 } }}
+                InputLabelProps={{ shrink: true }}
+              />
+            </Stack>
             <Scrollbar>
               <TableContainer sx={{ overflow: 'unset' }}>
                 <Table sx={{ minWidth: 800 }}>
@@ -375,16 +539,19 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {attendanceRecords.length === 0 ? (
+                    {filteredRecords.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={4} align="center" sx={{ py: 8 }}>
+                          <Iconify icon="solar:inbox-line-bold-duotone" width={64} sx={{ mb: 2, color: 'text.disabled', opacity: 0.5 }} />
                           <Typography variant="body2" color="text.secondary">
-                            No attendance records found. Click "Record Attendance" to get started.
+                            {attendanceRecords.length === 0 
+                              ? 'No attendance records found. Click "Record Attendance" to get started.'
+                              : 'No records match your filters. Try adjusting your search criteria.'}
                           </Typography>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      attendanceRecords.map((record) => {
+                      paginatedRecords.map((record) => {
                         const student = students.find(s => s.id === record.student_id);
                         return (
                           <TableRow key={record.id} hover>
@@ -436,6 +603,20 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
                 </Table>
               </TableContainer>
             </Scrollbar>
+
+            {/* Pagination */}
+            {filteredRecords.length > 0 && (
+              <TablePagination
+                component="div"
+                count={filteredRecords.length}
+                page={page}
+                onPageChange={handleChangePage}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={handleChangeRowsPerPage}
+                rowsPerPageOptions={[5, 10, 25, 50, 100]}
+                sx={{ borderTop: `1px solid ${alpha(theme.palette.grey[500], 0.12)}` }}
+              />
+            )}
           </Box>
         </Card>
       </Stack>

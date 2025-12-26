@@ -3,7 +3,7 @@ import { TRPCReactProvider } from '@/trpc/client';
 import type { Metadata } from 'next';
 
 import { Providers } from './providers';
-
+import { ClerkProvider } from '@clerk/nextjs';
 // ----------------------------------------------------------------------
 
 export const metadata: Metadata = {
@@ -17,13 +17,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <TRPCReactProvider>
-      <html lang="en">
-        <body>
-          <Providers>
-            {children}
-          </Providers>
-        </body>
-      </html>
+      <ClerkProvider>
+        <html lang="en">
+          <body>
+            <Providers>
+              {children}
+            </Providers>
+          </body>
+        </html>
+      </ClerkProvider>
     </TRPCReactProvider>
   );
 }

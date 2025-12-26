@@ -22,6 +22,7 @@ import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useUserRole } from 'src/hooks/use-user-role';
+import { useClubContext } from 'src/contexts/club-context';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -43,6 +44,7 @@ type Session = {
 export function SessionsView() {
   const theme = useTheme();
   const { userId } = useUserRole();
+  const { selectedClub } = useClubContext();
   
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -60,20 +62,14 @@ export function SessionsView() {
     notes: '',
     date: '',
   });
-  
-  const [currentUserClubId, setCurrentUserClubId] = useState<string | null>(null);
-  const [clubName, setClubName] = useState<string | null>(null);
 
-  // Fetch current user club using tRPC
-  const { data: clubData } = useQuery({
-    ...trpc.clubs.getCurrentUserClub.queryOptions(),
-    enabled: !!userId,
-  });
+  const currentUserClubId = selectedClub?.id || null;
+  const clubName = selectedClub?.club_name || null;
 
-  // Fetch sessions using tRPC
+  // Fetch sessions using tRPC - filtered by selected club
   const { data: sessionsData, isLoading: loading } = useQuery({
-    ...trpc.sessions.getSessions.queryOptions(),
-    enabled: !!userId,
+    ...trpc.sessions.getSessions.queryOptions({ clubId: currentUserClubId || undefined }),
+    enabled: !!userId && !!currentUserClubId,
   });
 
   // Create session mutation
@@ -103,14 +99,7 @@ export function SessionsView() {
     },
   });
 
-  // Update local state when data changes
-  useEffect(() => {
-    if (clubData) {
-      setCurrentUserClubId(clubData.club_id);
-      setClubName(clubData.club_name);
-    }
-  }, [clubData]);
-
+  // Update local state when sessions data changes
   useEffect(() => {
     if (sessionsData) {
       setSessions(sessionsData as any);

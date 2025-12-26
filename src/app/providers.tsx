@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { usePathname } from 'src/routes/hooks';
 
 import { ThemeProvider } from 'src/theme/theme-provider';
+import { ClubProvider } from '@/contexts/club-context';
 
 // ----------------------------------------------------------------------
 
@@ -15,7 +16,13 @@ type ProvidersProps = {
 export function Providers({ children }: ProvidersProps) {
   useScrollToTop();
 
-  return <ThemeProvider>{children}</ThemeProvider>;
+  return (
+    <ThemeProvider>
+      <ClubProvider>
+        {children}
+      </ClubProvider>
+    </ThemeProvider>
+  );
 }
 
 // ----------------------------------------------------------------------
