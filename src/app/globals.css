@@ -1,0 +1,452 @@
+/** **************************************
+* Fonts: app
+*************************************** */
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter+Tight:ital,wght@0,100..900;1,100..900&display=swap');
+@import '@fontsource-variable/dm-sans';
+@import '@fontsource/barlow/400.css';
+@import '@fontsource/barlow/500.css';
+@import '@fontsource/barlow/600.css';
+@import '@fontsource/barlow/700.css';
+@import '@fontsource/barlow/800.css';
+
+/** **************************************
+* Plugins
+*************************************** */
+/* scrollbar */
+@import '../components/scrollbar/styles.css';
+/* chart */
+@import '../components/chart/styles.css';
+
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --shadow-header_shadow: 0px 1px 3px 0px rgba(0, 0, 0, 0.1);
+
+  --color-dark_black: #1b1d1e;
+  --color-purple_blue: #4928fd;
+  --color-purple: #ba81ee;
+  --color-blue: #70b5ff;
+  --color-orange: #ffaf68;
+  --color-green: #79d45e;
+  --color-pink: #f4889a;
+  --color-blue_gradient: #d9f3fc;
+  --color-yellow_gradient: #fdf1d3;
+  --color-pale-yellow: #f6e683;
+  --color-dark_yellow_gradient: #443f32;
+  --color-dark_blue_gradient: #303d42;
+
+  /* MUI Primary Colors */
+  --color-mui-primary-lighter: #D0ECFE;
+  --color-mui-primary-light: #73BAFB;
+  --color-mui-primary-main: #1877F2;
+  --color-mui-primary-dark: #0C44AE;
+  --color-mui-primary-darker: #042174;
+  --color-mui-primary-contrast: #FFFFFF;
+
+  /* MUI Secondary Colors */
+  --color-mui-secondary-lighter: #EFD6FF;
+  --color-mui-secondary-light: #C684FF;
+  --color-mui-secondary-main: #8E33FF;
+  --color-mui-secondary-dark: #5119B7;
+  --color-mui-secondary-darker: #27097A;
+  --color-mui-secondary-contrast: #FFFFFF;
+
+  /* MUI Info Colors */
+  --color-mui-info-lighter: #CAFDF5;
+  --color-mui-info-light: #61F3F3;
+  --color-mui-info-main: #00B8D9;
+  --color-mui-info-dark: #006C9C;
+  --color-mui-info-darker: #003768;
+  --color-mui-info-contrast: #FFFFFF;
+
+  /* MUI Success Colors */
+  --color-mui-success-lighter: #D3FCD2;
+  --color-mui-success-light: #77ED8B;
+  --color-mui-success-main: #22C55E;
+  --color-mui-success-dark: #118D57;
+  --color-mui-success-darker: #065E49;
+  --color-mui-success-contrast: #ffffff;
+
+  /* MUI Warning Colors */
+  --color-mui-warning-lighter: #FFF5CC;
+  --color-mui-warning-light: #FFD666;
+  --color-mui-warning-main: #FFAB00;
+  --color-mui-warning-dark: #B76E00;
+  --color-mui-warning-darker: #7A4100;
+  --color-mui-warning-contrast: #1C252E;
+
+  /* MUI Error Colors */
+  --color-mui-error-lighter: #FFE9D5;
+  --color-mui-error-light: #FFAC82;
+  --color-mui-error-main: #FF5630;
+  --color-mui-error-dark: #B71D18;
+  --color-mui-error-darker: #7A0916;
+  --color-mui-error-contrast: #FFFFFF;
+
+  /* MUI Grey Colors */
+  --color-mui-grey-50: #FCFDFD;
+  --color-mui-grey-100: #F9FAFB;
+  --color-mui-grey-200: #F4F6F8;
+  --color-mui-grey-300: #DFE3E8;
+  --color-mui-grey-400: #C4CDD5;
+  --color-mui-grey-500: #919EAB;
+  --color-mui-grey-600: #637381;
+  --color-mui-grey-700: #454F5B;
+  --color-mui-grey-800: #1C252E;
+  --color-mui-grey-900: #141A21;
+
+  /* MUI Background Colors */
+  --color-mui-background-paper: #FFFFFF;
+  --color-mui-background-default: #F9FAFB;
+  --color-mui-background-neutral: #F4F6F8;
+
+  /* MUI Text Colors */
+  --color-mui-text-primary: #1C252E;
+  --color-mui-text-secondary: #637381;
+  --color-mui-text-disabled: #919EAB;
+
+  --breakpoint-Xsm: 425px;
+  --breakpoint-sm: 576px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 992px;
+  --breakpoint-xl: 1024px;
+  --breakpoint-xxl: 1280px;
+  --breakpoint-2xl: 1440px;
+
+  --spacing-25: 25rem;
+  --spacing-32: 32rem;
+  --spacing-38: 38rem;
+  --spacing-48: 48rem;
+  --spacing-50: 50rem;
+  --spacing-3_75: 3.75rem;
+  --spacing-6_5: 6.5rem;
+  --spacing-18_75: 18.75rem;
+  --spacing-31_25: 31.25rem;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  --radius: 0.5rem;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 82.8rem;
+    margin-top: 0;
+    margin-bottom: 0;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  @media (min-width: 576px) {
+    .container {
+      padding-left: 1.75rem;
+      padding-right: 1.75rem;
+    }
+  }
+  html {
+    height: 100%;
+    scroll-behavior: smooth;
+    font-family: 'Inter Tight', sans-serif;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  html.dark {
+    background-color: var(--color-dark_black);
+  }
+
+  body,
+  #root,
+  #root__layout {
+    display: flex;
+    flex: 1 1 auto;
+    min-height: 100%;
+    flex-direction: column;
+    font-size: 1rem;
+    line-height: 1.5;
+    font-weight: 400;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  img {
+    max-width: 100%;
+    vertical-align: middle;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style-type: none;
+  }
+
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: none;
+  }
+
+  input[type='number']::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  input[type='number']::-webkit-inner-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  * {
+    margin: 0%;
+    padding: 0%;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer utilities {
+  .instrument-font {
+    font-family: 'Instrument Serif', serif;
+  }
+
+  .hero-mask {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent,
+      white 20%,
+      white 80%,
+      transparent
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent,
+      white 20%,
+      white 80%,
+      transparent
+    );
+  }
+}
+
+@layer components {
+  h1 {
+    font-size: 3rem;
+    line-height: 1;
+    font-weight: 500;
+    color: var(--color-dark_black);
+  }
+
+  h1.dark,
+  .dark h1 {
+    color: white;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 4.5rem;
+      line-height: 1;
+    }
+  }
+
+  @media (min-width: 1440px) {
+    h1 {
+      font-size: 8rem;
+      line-height: 156px;
+    }
+  }
+
+  h2 {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+    font-weight: 500;
+    color: var(--color-dark_black);
+  }
+
+  h2.dark,
+  .dark h2 {
+    color: white;
+  }
+
+  @media (min-width: 768px) {
+    h2 {
+      font-size: 3rem;
+      line-height: 1;
+    }
+  }
+
+  h3 {
+    font-size: 3rem;
+    line-height: 1;
+    font-weight: 500;
+    color: var(--color-dark_black);
+  }
+
+  h3.dark,
+  .dark h3 {
+    color: white;
+  }
+
+  h4 {
+    font-size: 1.5rem;
+    line-height: 2rem;
+    font-weight: 500;
+    color: var(--color-dark_black);
+  }
+
+  h4.dark,
+  .dark h4 {
+    color: white;
+  }
+
+  h5 {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+    font-weight: 500;
+  }
+
+  h6 {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    font-weight: 500;
+  }
+
+  @media (min-width: 1024px) {
+    h6 {
+      font-size: 1.25rem;
+      line-height: 1.75rem;
+    }
+  }
+
+  p {
+    font-size: 1rem;
+    line-height: 1.5rem;
+    font-weight: 400;
+    color: var(--color-dark_black);
+  }
+
+  p.dark,
+  .dark p {
+    color: white;
+  }
+}
+
+/* MUI CSS Variables for backward compatibility */
+:root {
+  /* Primary Colors */
+  --mui-primary-lighter: #D0ECFE;
+  --mui-primary-light: #73BAFB;
+  --mui-primary-main: #1877F2;
+  --mui-primary-dark: #0C44AE;
+  --mui-primary-darker: #042174;
+  --mui-primary-contrast: #FFFFFF;
+
+  /* Secondary Colors */
+  --mui-secondary-lighter: #EFD6FF;
+  --mui-secondary-light: #C684FF;
+  --mui-secondary-main: #8E33FF;
+  --mui-secondary-dark: #5119B7;
+  --mui-secondary-darker: #27097A;
+  --mui-secondary-contrast: #FFFFFF;
+
+  /* Info Colors */
+  --mui-info-lighter: #CAFDF5;
+  --mui-info-light: #61F3F3;
+  --mui-info-main: #00B8D9;
+  --mui-info-dark: #006C9C;
+  --mui-info-darker: #003768;
+  --mui-info-contrast: #FFFFFF;
+
+  /* Success Colors */
+  --mui-success-lighter: #D3FCD2;
+  --mui-success-light: #77ED8B;
+  --mui-success-main: #22C55E;
+  --mui-success-dark: #118D57;
+  --mui-success-darker: #065E49;
+  --mui-success-contrast: #ffffff;
+
+  /* Warning Colors */
+  --mui-warning-lighter: #FFF5CC;
+  --mui-warning-light: #FFD666;
+  --mui-warning-main: #FFAB00;
+  --mui-warning-dark: #B76E00;
+  --mui-warning-darker: #7A4100;
+  --mui-warning-contrast: #1C252E;
+
+  /* Error Colors */
+  --mui-error-lighter: #FFE9D5;
+  --mui-error-light: #FFAC82;
+  --mui-error-main: #FF5630;
+  --mui-error-dark: #B71D18;
+  --mui-error-darker: #7A0916;
+  --mui-error-contrast: #FFFFFF;
+
+  /* Grey Colors */
+  --mui-grey-50: #FCFDFD;
+  --mui-grey-100: #F9FAFB;
+  --mui-grey-200: #F4F6F8;
+  --mui-grey-300: #DFE3E8;
+  --mui-grey-400: #C4CDD5;
+  --mui-grey-500: #919EAB;
+  --mui-grey-600: #637381;
+  --mui-grey-700: #454F5B;
+  --mui-grey-800: #1C252E;
+  --mui-grey-900: #141A21;
+
+  /* Background Colors */
+  --mui-background-paper: #FFFFFF;
+  --mui-background-default: #F9FAFB;
+  --mui-background-neutral: #F4F6F8;
+
+  /* Text Colors */
+  --mui-text-primary: #1C252E;
+  --mui-text-secondary: #637381;
+  --mui-text-disabled: #919EAB;
+}
+

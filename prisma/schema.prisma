@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  admin
+  super_admin
+
+  @@map("user_role")
+}
+
+enum ClubStatus {
+  active
+  terminated
+
+  @@map("club_status") //  Maps to the actual PostgreSQL enum name
+}
+
+model User {
+  id           BigInt   @id @default(autoincrement())
+  auth_user_id String?  @unique @map("auth_user_id") @db.Uuid
+  first_name   String   @db.Text
+  last_name    String   @db.Text
+  role         UserRole @default(admin)
+  created_at   DateTime @default(now()) @db.Timestamptz
+
+  clubLeaders ClubLeader[]
+
+  @@map("users")
+}
+
+model Club {
+  id               BigInt     @id @default(autoincrement())
+  created_at       DateTime   @default(now()) @db.Timestamptz
+  club_name        String     @db.Text
+  club_description String     @db.Text
+  status           ClubStatus @default(active)
+  created_by       String     @db.Text
+
+  members     ClubMember[]
+  leaders     ClubLeader[]
+  invites     ClubInvite[]
+  sessions    Session[]
+
+  @@map("clubs")
+}
+
+enum ClubLeaderRole {
+  president
+  vice_president @map("vice-president")
+  secretary
+
+  @@map("role")
+}
+
+enum Grade {
+  EnrichmentYear   @map("Enrichment Year")
+  Senior4          @map("Senior 4")
+  Senior5          @map("Senior 5")
+  Senior6          @map("Senior 6")
+
+  @@map("grade")
+}
+
+enum Combination {
+  MathematicsPhysicsComputerScience              @map("Mathematics-Physics-Computer Science")
+  HistoryGeographyLiteraturePsychology          @map("History-Geography-Literature-Psychology")
+  MathematicsPhysicsGeographyEconomics          @map("Mathematics-Physics-Geography-Economics")
+  MathematicsPhysicsChemistryBiology            @map("Mathematics-Physics-Chemistry-Biology")
+  MathematicsEconomicsGeography                 @map("Mathematics-Economics-Geography")
+  MathematicsComputerScienceEconomics           @map("Mathematics-Computer Science-Economics")
+  PhysicsChemistryBiology                       @map("Physics-Chemistry-Biology")
+  HistoryGeographyLiterature                    @map("History-Geography-Literature")
+
+  @@map("combination")
+}
+
+enum Gender {
+  male
+  female
+
+  @@map("gender")
+}
+
+enum MembershipStatus {
+  active
+  left
+
+  @@map("membership_status")
+}
+
+enum AttendanceStatus {
+  present
+  absent
+  excused
+
+  @@map("attendance_status")
+}
+
+model ClubInvite {
+  id         BigInt         @id @default(autoincrement())
+  club_id    BigInt
+  role       String?
+  token      String         @unique @db.Text
+  email      String         @db.Text
+  expires_at DateTime       @db.Timestamptz
+  created_at DateTime       @default(now()) @db.Timestamptz
+  used_at    DateTime?      @db.Timestamptz
+
+  club Club @relation(fields: [club_id], references: [id])
+
+  @@index([token])
+  @@index([club_id])
+  @@map("club_invites")
+}
+
+model Student {
+  id         BigInt      @id @default(autoincrement())
+  student_id BigInt?     @map("student_id")
+  first_name String      @db.Text
+  last_name  String      @db.Text
+  grade      Grade?
+  combination Combination?
+  gender     Gender?
+  created_at DateTime    @default(now()) @db.Timestamptz
+
+  clubMembers ClubMember[]
+  attendance  Attendance[]
+
+  @@index([student_id])
+  @@map("students")
+}
+
+model ClubMember {
+  id               BigInt           @id @default(autoincrement())
+  club_id          BigInt
+  student_id       BigInt?
+  membership_status MembershipStatus @default(active)
+  joined_at        DateTime         @default(now()) @db.Timestamptz
+  left_at          DateTime?        @db.Timestamptz
+
+  club    Club     @relation(fields: [club_id], references: [id])
+  student Student? @relation(fields: [student_id], references: [id])
+
+  @@index([club_id])
+  @@index([student_id])
+  @@map("club-members")
+}
+
+model Session {
+  id       BigInt   @id @default(autoincrement())
+  club_id  BigInt
+  notes    String   @db.Text
+  date     DateTime @db.Timestamptz
+
+  club       Club         @relation(fields: [club_id], references: [id])
+  attendance Attendance[]
+
+  @@index([club_id])
+  @@index([date])
+  @@map("sessions")
+}
+
+model ClubLeader {
+  id        BigInt         @id @default(autoincrement())
+  user_id   BigInt
+  club_id   BigInt
+  role      ClubLeaderRole
+  created_at DateTime       @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id])
+  club Club @relation(fields: [club_id], references: [id])
+
+  @@unique([user_id, club_id]) // Prevent duplicate leadership in same club, but allow multiple clubs
+  @@index([user_id])
+  @@index([club_id])
+  @@map("club_leaders")
+}
+
+model Attendance {
+  id               BigInt           @id @default(autoincrement())
+  session_id       BigInt
+  student_id       BigInt
+  attendance_status AttendanceStatus
+  created_at       DateTime         @default(now()) @db.Timestamptz
+
+  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  student Student @relation(fields: [student_id], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([session_id])
+  @@index([student_id])
+  @@map("attendance")
+}
