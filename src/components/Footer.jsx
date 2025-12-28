@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 
-import { CONFIG } from 'src/config-global';
+import { CONFIG } from '@/config-global';
 
 import { Logo } from '@/components/logo';
 

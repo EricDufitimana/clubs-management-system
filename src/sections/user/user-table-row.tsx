@@ -17,7 +17,7 @@ import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 import { Label } from '@/components/label';
 import { Iconify } from '@/components/iconify';
 
-import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
+import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/user/utils/colors';
 
 // ----------------------------------------------------------------------
 

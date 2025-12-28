@@ -8,7 +8,7 @@ import { varAlpha, mergeClasses } from 'minimal-shared/utils';
 import ButtonBase from '@mui/material/ButtonBase';
 import { styled, alpha as hexAlpha } from '@mui/material/styles';
 
-import { Iconify } from '../iconify';
+import { Iconify } from '@/components/iconify';
 import { colorPickerClasses } from './classes';
 
 // ----------------------------------------------------------------------

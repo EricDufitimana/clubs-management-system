@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { InviteChoiceView } from 'src/sections/auth/invite-choice-view';
+import { InviteChoiceView } from '@/sections/auth/invite-choice-view';
 
 // ----------------------------------------------------------------------
 

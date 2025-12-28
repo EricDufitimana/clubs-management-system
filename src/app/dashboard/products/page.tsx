@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
-import { CONFIG } from 'src/config-global';
+import { CONFIG } from '@/config-global';
 
-import { ProductsView } from 'src/sections/product/view';
+import { ProductsView } from '@/sections/product/view';
 
 // ----------------------------------------------------------------------
 

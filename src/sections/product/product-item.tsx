@@ -4,7 +4,7 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
-import { fCurrency } from 'src/utils/format-number';
+import { fCurrency } from '@/utils/format-number';
 
 import { Label } from '@/components/label';
 import { ColorPreview } from '@/components/color-utils';

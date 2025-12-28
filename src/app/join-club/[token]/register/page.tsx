@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { InviteRegisterView } from 'src/sections/auth/invite-register-view';
+import { InviteRegisterView } from '@/sections/auth/invite-register-view';
 
 // ----------------------------------------------------------------------
 
