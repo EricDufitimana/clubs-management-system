@@ -1,9 +1,8 @@
 'use client'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
 import SocialSignIn from '../SocialSignIn'
 import Loader from '../../shared/loader'
 import Logo from '../../layout/header/Logo'
@@ -11,6 +10,7 @@ import { useTRPC } from '@/trpc/client'
 
 const Signin = () => {
   const router = useRouter()
+  const pathname = usePathname()
   const trpc = useTRPC()
   const [loginData, setLoginData] = useState({
     email: '',
@@ -22,19 +22,23 @@ const Signin = () => {
     password: '',
   }) //validation state
 
+  const [isLoggingIn, setIsLoggingIn] = useState(false) // Loading state for spinner
+
   const loginMutation = useMutation({
     ...trpc.auth.login.mutationOptions(),
     onSuccess: (data) => {
-      toast.success('Login successful!')
       // Redirect based on user role
-      if (data?.redirectPath) {
-        router.push(data.redirectPath)
-      } else {
-        router.push('/dashboard')
-      }
+      setTimeout(() => {
+        if (data?.redirectPath) {
+          router.push(data.redirectPath)
+        } else {
+          router.push('/dashboard')
+        }
+      }, 500) // Short delay for better UX
     },
     onError: (error) => {
-      toast.error(error.message || 'An error occurred while signing in')
+      setIsLoggingIn(false)
+      console.error('Login error:', error.message || 'An error occurred while signing in')
     },
   })
 
@@ -68,6 +72,7 @@ const Signin = () => {
     if (!validateForm()) {
       return
     }
+    setIsLoggingIn(true) // Start loading
     loginMutation.mutate({
       email: loginData.email,
       password: loginData.password,
@@ -85,14 +90,6 @@ const Signin = () => {
                   <Logo />
                 </div>
 
-                <SocialSignIn actionText='Sign In' />
-
-                <span className='z-1 relative my-8 block text-center'>
-                  <span className='-z-1 absolute left-0 top-1/2 block h-px w-full bg-dark_black/10 dark:bg-white/20'></span>
-                  <span className='text-sm text-dark_black/50 dark:text-white/40 relative z-10 inline-block bg-white dark:bg-dark_black px-3'>
-                    OR
-                  </span>
-                </span>
 
                 <form onSubmit={handleSubmit}>
                   <div className='mb-5 text-left'>
@@ -140,26 +137,19 @@ const Signin = () => {
                   <div className='mb-9'>
                     <button
                       type='submit'
-                      disabled={loginMutation.isPending}
+                      disabled={isLoggingIn}
                       className='flex w-full px-5 py-3 font-medium cursor-pointer items-center justify-center transition duration-300 ease-in-out rounded-full border border-dark_black bg-dark_black hover:bg-white dark:hover:bg-white/20 dark:bg-white text-white dark:hover:text-white hover:text-dark_black dark:text-dark_black disabled:opacity-50 disabled:cursor-not-allowed'>
-                      {loginMutation.isPending ? 'Signing in...' : 'Sign In'} {loginMutation.isPending && <Loader />}
+                      {isLoggingIn ? 'Signing in...' : 'Sign In'} {isLoggingIn && <Loader />}
                     </button>
                   </div>
                 </form>
 
-                <Link
+                {/* <Link
                   href='/forgot-password'
                   className='mb-2 inline-block text-dark_black/50 dark:text-white/50 dark:hover:text-white/70 hover:text-dark_black'>
                   Forget Password?
-                </Link>
-                <p className='text-dark_black/70 dark:text-white/50'>
-                  Not a member yet?{' '}
-                  <Link
-                    href='/signup'
-                    className='text-dark_black dark:text-white hover:text-dark_black/50 dark:hover:text-white/50'>
-                    Sign Up
-                  </Link>
-                </p>
+                </Link> */}
+           
               </div>
             </div>
           </div>

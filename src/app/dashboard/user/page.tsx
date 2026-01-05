@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
 import { CONFIG } from '@/config-global';
 import { trpc, getQueryClient } from '@/trpc/server';
 
+import { PageLoading } from '@/components/shared/page-loading';
 import { UserView } from '@/sections/user/view';
 
 // ----------------------------------------------------------------------
@@ -32,7 +34,9 @@ export default async function Page() {
   
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <UserView />
+      <Suspense fallback={<PageLoading />}>
+        <UserView />
+      </Suspense>
     </HydrationBoundary>
   );
 }

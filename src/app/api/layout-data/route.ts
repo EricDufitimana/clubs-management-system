@@ -1,68 +1,36 @@
 import { NextResponse } from "next/server";
 
 const headerData = [
-    { label: 'About us', href: '/#aboutus' },
-    { label: 'Services', href: '/#services' },
-    { label: 'Work', href: '/#work' },
-    { label: 'Team', href: '/#team' },
-    { label: 'Pricing', href: '/#pricing' },
-    { label: 'Awards', href: '/#awards' },
-    { label: 'Contact', href: '/contact' },
+    { label: 'Home', href: '/#home' },
+    { label: 'About', href: '/#about' },
+    { label: 'Features', href: '/#features' },
+    { label: 'Reviews', href: '/#reviews' },
+    { label: 'FAQ', href: '/#faq' },
+    {label: 'Contact', href: '/contact'}
 ];
 
 const footerData = {
     brand: {
-        name: "Awake",
-        tagline: "Empowering businesses with innovative solutions. Let's create something amazing together.",
-        socialLinks: [
-            {
-                icon: "/images/home/footerSocialIcon/twitter.svg",
-                dark_icon: "/images/home/footerSocialIcon/twitter_dark.svg",
-                link: "https://twitter.com"
-            },
-            {
-                icon: "/images/home/footerSocialIcon/linkedin.svg",
-                dark_icon: "/images/home/footerSocialIcon/linkedin_dark.svg",
-                link: "https://linkedin.com/in"
-            },
-            {
-                icon: "/images/home/footerSocialIcon/dribble.svg",
-                dark_icon: "/images/home/footerSocialIcon/dribble_dark.svg",
-                link: "https://dribbble.com"
-            },
-            {
-                icon: "/images/home/footerSocialIcon/instagram.svg",
-                dark_icon: "/images/home/footerSocialIcon/instagram_dark.svg",
-                link: "https://instagram.com"
-            }
-        ]
+        name: "Clubs Management System",
+        tagline: "Connecting communities through exceptional club management.",
+        socialLinks: []
     },
     sitemap: {
-        name: "Sitemap",
+        name: "Quick Links",
         links: [
-            { name: "Contact us", url: "/contact" },
-            { name: "About us", url: "/#aboutus" },
-            { name: "Work", url: "/#work" },
-            { name: "Services", url: "/#services" },
-            { name: "Pricing", url: "/#pricing" }
-        ]
-    },
-    otherPages: {
-        name: "Other Pages",
-        links: [
-            { name: "Error 404", url: "/not-found" },
-            { name: "Terms & Conditions", url: "/terms-and-conditions" },
-            { name: "Privacy Policy", url: "/privacy-policy" },
-            { name: "Documentation", url: "/documentation" }
+            { name: "Home", url: "/" },
+            { name: "Contact", url: "/contact" },
+            { name: "Sign In", url: "/signin" },
+            { name: "Dashboard", url: "/dashboard" }
         ]
     },
     contactDetails: {
-        name:"Contact Details",
-        address: "81 Rivington Street London EC2A 3AY",
-        email: "hello@awake.agency",
-        phone: "0105 192 3556"
+        name:"Get in Touch",
+        address: "",
+        email: "",
+        phone: "+250794007353"
     },
-    copyright: "©2025 Awake. All Rights Reserved"
+    copyright: "©2025 Clubs Management System. All Rights Reserved"
 };
 
 export const GET = async () => {

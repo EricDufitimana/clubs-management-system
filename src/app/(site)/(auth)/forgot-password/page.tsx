@@ -3,7 +3,7 @@ import ForgotPassword from "@/components/auth/forgot-password";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Forgot Password | Awake Agency",
+  title: "Forgot Password | CMS",
 };
 
 const ForgotPasswordPage = () => {

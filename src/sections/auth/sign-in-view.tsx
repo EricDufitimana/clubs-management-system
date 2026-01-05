@@ -31,6 +31,7 @@ export function SignInView() {
   const redirectUrl = searchParams.get('redirect');
 
   const [showPassword, setShowPassword] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
     message: '',
@@ -46,11 +47,15 @@ export function SignInView() {
         message: 'Login successful',
         severity: 'success'
       });
+      // Set redirecting state to keep spinner going
+      setIsRedirecting(true);
       // Handle redirect on client side - use custom redirect if available
       if (redirectUrl) {
         router.push(redirectUrl);
       } else if (data?.redirectPath) {
         router.push(data.redirectPath);
+      } else {
+        router.push('/dashboard');
       }
     },
     onError: (error) => {
@@ -164,10 +169,10 @@ export function SignInView() {
         type="submit"
         color="inherit"
         variant="contained"
-        disabled={loginMutation.isPending}
-        startIcon={loginMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
+        disabled={loginMutation.isPending || isRedirecting}
+        startIcon={(loginMutation.isPending || isRedirecting) ? <CircularProgress size={20} color="inherit" /> : null}
       >
-        {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+        {(loginMutation.isPending || isRedirecting) ? 'Signing in...' : 'Sign in'}
       </Button>
     </Box>
   );

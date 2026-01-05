@@ -6,7 +6,7 @@ const Logo: React.FC<HeaderProps> = () => {
     return (
         <Link href="/">
             <Image
-                src="/images/logo/logo.svg"
+                src="/images/logo/cms-logo-dark.svg"
                 alt="logo"
                 width={117}
                 height={34}
@@ -16,7 +16,7 @@ const Logo: React.FC<HeaderProps> = () => {
                 className='dark:hidden'
             />
             <Image
-                src="/images/logo/DarkModeLogo.svg"
+                src="/images/logo/cms-logo-light.svg"
                 alt="logo"
                 width={160}
                 height={50}

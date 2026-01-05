@@ -1,5 +1,5 @@
 {
-  "name": "awake_project",
+  "name": "cms_project",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -17,6 +17,7 @@
     "@iconify/icons-ion": "^1.2.10",
     "@iconify/react": "^5.2.0",
     "@iconify/tools": "^4.1.1",
+    "@inngest/agent-kit": "^0.13.2",
     "@mui/lab": "^7.0.0-beta.10",
     "@mui/material": "^7.0.1",
     "@prisma/client": "^6.18.0",

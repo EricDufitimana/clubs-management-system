@@ -21,6 +21,7 @@ export const baseTheme: ThemeOptions = {
       customShadows: customShadows.light,
     },
   },
+  defaultColorScheme: 'light',
   components,
   typography,
   shape: { borderRadius: 8 },

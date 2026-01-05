@@ -3,6 +3,7 @@
 import type { LinkProps } from '@mui/material/Link';
 
 import { useId } from 'react';
+import Image from 'next/image';
 import { mergeClasses } from 'minimal-shared/utils';
 
 import Link from '@mui/material/Link';
@@ -197,3 +198,51 @@ const LogoRoot = styled(Link)(() => ({
   display: 'inline-flex',
   verticalAlign: 'middle',
 }));
+
+// ----------------------------------------------------------------------
+
+export type CmsLogoProps = LinkProps & {
+  isSingle?: boolean;
+  disabled?: boolean;
+};
+
+export function CmsLogo({
+  sx,
+  disabled,
+  className,
+  href = '/',
+  isSingle = true,
+  ...other
+}: CmsLogoProps) {
+  return (
+    <LogoRoot
+      component={RouterLink}
+      href={href}
+      aria-label="CMS Logo"
+      underline="none"
+      className={mergeClasses([logoClasses.root, className])}
+      sx={[
+        {
+          width: 'auto',
+          height: 33,
+          display: 'flex',
+          alignItems: 'center',
+          ...(!isSingle && { height: 36 }),
+          ...(disabled && { pointerEvents: 'none' }),
+        },
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
+      {...other}
+    >
+      <Image
+        src="/images/logo/cms-logo-curve.svg"
+        alt="CMS Logo"
+        width={isSingle ? 40 : 102}
+        height={isSingle ? 40 : 36}
+        style={{ width: 'auto', height: '100%' }}
+        quality={100}
+        priority={true}
+      />
+    </LogoRoot>
+  );
+}

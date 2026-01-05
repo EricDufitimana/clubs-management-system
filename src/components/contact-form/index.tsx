@@ -3,6 +3,8 @@ import { Icon } from '@iconify/react/dist/iconify.js'
 import Link from 'next/link'
 import { useState } from 'react'
 import { TextGenerateEffect } from '../ui/text-generate-effect'
+import { useTRPC } from '@/trpc/client'
+import { useMutation } from '@tanstack/react-query'
 
 function ContactForm() {
   const [formData, setFormData] = useState({
@@ -14,6 +16,9 @@ function ContactForm() {
   })
   const [submitted, setSubmitted] = useState(false)
   const [loader, setLoader] = useState(false)
+  const trpc = useTRPC()
+  const sendEmailMutation = useMutation(trpc.contact.sendEmail.mutationOptions())
+  
   const handleChange = (e: any) => {
     const { name, value } = e.target
     setFormData((prevData) => ({
@@ -34,27 +39,26 @@ function ContactForm() {
     e.preventDefault()
     setLoader(true)
 
-    fetch('https://formsubmit.co/ajax/bhainirav772@gmail.com', {
-      method: 'POST',
-      headers: { 'Content-type': 'application/json' },
-      body: JSON.stringify({
+    try {
+      const result = await sendEmailMutation.mutateAsync({
         name: formData.name,
         email: formData.email,
         interest: formData.interest,
         budget: formData.budget,
         message: formData.message,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        console.log(data)
-
-        setSubmitted(data.success)
+      })
+      
+      if (result.success) {
+        setSubmitted(true)
         reset()
-      })
-      .catch((error) => {
-        console.log(error.message)
-      })
+      } else {
+        console.error('Email sending failed')
+      }
+    } catch (error) {
+      console.error('Form submission error:', error)
+    } finally {
+      setLoader(false)
+    }
   }
 
   return (
@@ -150,38 +154,7 @@ function ContactForm() {
                     />
                   </div>
                 </div>
-                <div className='flex flex-col md:flex md:flex-row gap-6'>
-                  <div className='w-full'>
-                    <label htmlFor='interest'>
-                      What are you interested in?
-                    </label>
-                    <select
-                      className='w-full mt-2 text-base px-4 rounded-full py-2.5 border transition-all duration-500 dark:border-white/20 focus:outline-0 dark:bg-black/40'
-                      name='interest'
-                      id='interest'
-                      value={formData.interest}
-                      onChange={handleChange}>
-                      <option value='design & branding'>
-                        Design & Branding
-                      </option>
-                      <option value='Ecommerce'>Ecommerce</option>
-                      <option value='Specialist'>Specialist</option>
-                    </select>
-                  </div>
-                  <div className='w-full'>
-                    <label htmlFor='budget'>Project budget</label>
-                    <select
-                      className='w-full mt-2 text-base px-4 rounded-full py-2.5 border transition-all duration-500 dark:text-white border-solid dark:border-white/20 focus:outline-0 dark:bg-black/40'
-                      name='budget'
-                      id='budget'
-                      value={formData.budget}
-                      onChange={handleChange}>
-                      <option value=''>Select your budget</option>
-                      <option value='$10000'>$10,000</option>
-                      <option value='$50500'>$50,500</option>
-                    </select>
-                  </div>
-                </div>
+             
                 <div className='w-full'>
                   <label htmlFor='message'>Message</label>
                   <textarea
@@ -201,7 +174,7 @@ function ContactForm() {
                       type='submit'
                       className='group w-fit text-white dark:text-dark_black font-medium bg-dark_black dark:bg-white rounded-full flex items-center gap-4 py-2 pl-5 pr-2 transition-all duration-200 ease-in-out  hover:bg-transparent border hover:text-dark_black border-dark_black'>
                       <span className='transform transition-transform duration-200 ease-in-out group-hover:translate-x-10'>
-                        Let’s Collaborate
+                        Let's Talk
                       </span>
                       <svg
                         width='32'
@@ -209,7 +182,7 @@ function ContactForm() {
                         viewBox='0 0 32 32'
                         fill='none'
                         xmlns='http://www.w3.org/2000/svg'
-                        className='transform transition-transform duration-200 ease-in-out group-hover:-translate-x-36 group-hover:rotate-45'>
+                        className='transform transition-transform duration-200 ease-in-out group-hover:-translate-x-24 group-hover:rotate-45'>
                         <rect
                           width='32'
                           height='32'

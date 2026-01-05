@@ -1,107 +1,53 @@
-# Awake Agency + Clubs Management System
+# Clubs Management System
 
-This project combines the beautiful Awake Agency landing page with a full-featured Clubs Management System dashboard.
+A modern web application combining a beautiful landing page with a comprehensive clubs management dashboard.
 
-## 🎯 What's Inside
+## 🌟 Features
 
-### Landing Page (Awake Agency)
-- Modern, responsive landing page
-- Beautiful UI with dark mode support
-- Contact forms and documentation pages
-- Built with Next.js 16 and Tailwind CSS v4
+### Landing Page
+- Modern, responsive design with dark mode support
+- User authentication (Sign In/Sign Up)
+- Theme toggle and smooth animations
+- Built with Next.js 16 and Tailwind CSS
 
-### Dashboard (Clubs Management System)
-- Complete club management system
-- Admin, Super Admin, and User dashboards
-- Member management and attendance tracking
-- Session and event management
-- Analytics and reporting
-- Role-based access control
-- Email invitations with Resend
-- Built with Next.js 16, Prisma, tRPC, and Material-UI
+### Dashboard System
+- **Multi-role Access**: Super Admin, Admin, and User roles
+- **Club Management**: Create, edit, and manage clubs
+- **Member Management**: Add members, track attendance, manage status
+- **Session Management**: Create and manage club sessions
+- **Analytics**: Reports and attendance insights
+- **Email System**: Member invitations via Resend
+- **Left Members**: Separate view for former members
 
-## 🚀 Quick Start
+## � Key Features
 
-### 1. Install Dependencies
-```bash
-npm install
-```
+### Member Management
+- Add/remove members from clubs
+- Track member status (active/left)
+- Attendance tracking
+- Member profiles with avatars
 
-### 2. Set Up Environment Variables
-Create a `.env` file in the root directory. See `ENV_SETUP.md` for details.
+### Club Administration
+- Create and manage clubs
+- Club-specific member lists
+- Session scheduling
+- Analytics per club
 
-Required variables:
-- `DATABASE_URL` - PostgreSQL connection string
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` - Supabase anon key
-- `NEXTAUTH_SECRET` - NextAuth secret
-- `NEXTAUTH_URL` - Your app URL
-- `RESEND_API_KEY` - Resend API key for emails
+### Super Admin Features
+- View all clubs and members
+- System-wide analytics
+- Left members management
+- User role management
 
-### 3. Set Up Database
-```bash
-npx prisma generate
-npx prisma db push
-```
+## 🛠 Tech Stack
 
-### 4. Run Development Server
-```bash
-npm run dev
-```
-
-Visit:
-- Landing page: http://localhost:3000
-- Dashboard: http://localhost:3000/dashboard
-
-## 📁 Project Structure
-
-```
-src/
-├── app/
-│   ├── (site)/              # Landing page routes
-│   ├── dashboard/           # Dashboard routes
-│   ├── api/                 # API routes
-│   ├── components/          # React components
-│   └── globals.css          # Global styles (Tailwind v4)
-├── sections/                # Dashboard sections
-├── layouts/                 # Layout components
-├── lib/                     # Utilities (Prisma, auth, etc.)
-├── hooks/                   # Custom React hooks
-├── contexts/                # React contexts
-├── actions/                 # Server actions
-├── theme/                   # MUI theme configuration
-├── trpc/                    # tRPC setup
-└── utils/                   # Utility functions
-
-prisma/
-└── schema.prisma           # Database schema
-
-public/
-├── images/                 # Landing page images
-└── assets/                 # Dashboard assets
-```
-
-## 🛠️ Tech Stack
-
-### Frontend
-- **Next.js 16** - React framework with App Router
-- **React 19** - UI library
-- **Tailwind CSS v4** - Utility-first CSS
-- **Material-UI (MUI)** - Component library for dashboard
-- **Framer Motion** - Animations
-- **ApexCharts** - Data visualization
-
-### Backend
-- **Prisma** - ORM for database
-- **tRPC** - Type-safe API
-- **NextAuth** - Authentication
-- **Supabase** - Backend services
-- **Resend** - Email service
-
-### Development
-- **TypeScript** - Type safety
-- **ESLint** - Code linting
-- **Turbopack** - Fast development builds
+- **Frontend**: Next.js 16, React, TypeScript
+- **Styling**: Tailwind CSS, Material-UI
+- **Backend**: tRPC, Prisma ORM
+- **Database**: PostgreSQL
+- **Authentication**: NextAuth.js
+- **Email**: Resend
+- **State Management**: React Query (TanStack Query)
 
 ## 📖 Documentation
 

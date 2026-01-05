@@ -14,7 +14,7 @@ import Drawer, { drawerClasses } from '@mui/material/Drawer';
 import { usePathname } from '@/routes/hooks';
 import { RouterLink } from '@/routes/components';
 
-import { Logo } from '@/components/logo';
+import { CmsLogo } from '@/components/logo';
 import { Scrollbar } from '@/components/scrollbar';
 import { ClubSelector } from '@/components/club-selector';
 
@@ -156,7 +156,7 @@ export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
 
   return (
     <>
-      <Logo />
+      <CmsLogo />
 
       {slots?.topArea}
 

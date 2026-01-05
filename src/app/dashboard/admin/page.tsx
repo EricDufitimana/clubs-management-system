@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
 import { CONFIG } from '@/config-global';
 import { trpc, getQueryClient } from '@/trpc/server';
 
+import { PageLoading } from '@/components/shared/page-loading';
 import { OverviewAnalyticsView as DashboardView } from '@/sections/overview/view';
 
 // ----------------------------------------------------------------------
@@ -24,7 +26,9 @@ export default async function AdminPage() {
   
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <DashboardView />
+      <Suspense fallback={<PageLoading />}>
+        <DashboardView />
+      </Suspense>
     </HydrationBoundary>
   );
 }

@@ -56,6 +56,11 @@ export const superAdminNavItems: NavItem[] = [
     icon: icon('ic-user'),
   },
   {
+    title: 'Left Members',
+    path: '/dashboard/super-admin/left-members',
+    icon: <Icon icon="solar:logout-3-bold-duotone" width={24} height={24} />,
+  },
+  {
     title: 'Reports',
     path: '/dashboard/super-admin/reports',
     icon: <Icon icon="solar:chart-square-bold-duotone" width={24} height={24} />,

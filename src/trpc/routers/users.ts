@@ -72,15 +72,17 @@ export const usersRouter = createTRPCRouter({
             }
         });
 
-        // Map to UserProps structure
-        return Array.from(studentMap.values()).map(({ student, clubName, status }) => {
+        // Map to UserProps structure (only active members)
+        return Array.from(studentMap.values())
+            .filter(({ status }) => status === 'active')
+            .map(({ student, clubName }) => {
             const avatarUrl = getAvatarUrl(student.gender || undefined, student.id);
             
             return {
                 id: student.id.toString(),
                 name: `${student.first_name} ${student.last_name}`,
                 role: student.grade ? String(student.grade) : undefined,
-                status,
+                status: 'active' as const,
                 company: student.combination ? String(student.combination) : undefined,
                 avatarUrl,
                 isVerified: false,
@@ -132,15 +134,17 @@ export const usersRouter = createTRPCRouter({
             }
         });
 
-        // Map to UserProps structure
-        return Array.from(studentMap.values()).map(({ student, clubName, status }) => {
+        // Map to UserProps structure (only active members)
+        return Array.from(studentMap.values())
+            .filter(({ status }) => status === 'active')
+            .map(({ student, clubName }) => {
             const avatarUrl = getAvatarUrl(student.gender || undefined, student.id);
             
             return {
                 id: student.id.toString(),
                 name: `${student.first_name} ${student.last_name}`,
                 role: student.grade ? String(student.grade) : undefined,
-                status,
+                status: 'active' as const,
                 company: student.combination ? String(student.combination) : undefined,
                 avatarUrl,
                 isVerified: false,
@@ -180,6 +184,11 @@ export const usersRouter = createTRPCRouter({
             },
             include: {
                 student: true,
+                club: {
+                    select: {
+                        club_name: true,
+                    }
+                }
             },
             orderBy: {
                 left_at: 'desc',
@@ -203,6 +212,7 @@ export const usersRouter = createTRPCRouter({
                     avatarUrl,
                     joined_at: member.joined_at.toISOString(),
                     left_at: member.left_at?.toISOString() || '',
+                    clubName: member.club?.club_name || 'Unknown Club',
                 };
             });
     }),

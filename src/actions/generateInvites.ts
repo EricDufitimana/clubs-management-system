@@ -53,7 +53,7 @@ export async function generateAndSendInvites(
         }
       });
       
-      const inviteLink = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/join-club/${token}`;
+      const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/join-club/${token}`;
       
       // Use the role as the display name (it's already the position title)
       const roleDisplayName = invite.role;

@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
 import { CONFIG } from '@/config-global';
 import { trpc, getQueryClient } from '@/trpc/server';
 
+import { PageLoading } from '@/components/shared/page-loading';
 import { LeftMembersView } from '@/sections/member/view/left-members-view';
 
 // ----------------------------------------------------------------------
@@ -24,7 +26,9 @@ export default async function AdminLeftMembersPage() {
   
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <LeftMembersView />
+      <Suspense fallback={<PageLoading />}>
+        <LeftMembersView />
+      </Suspense>
     </HydrationBoundary>
   );
 }

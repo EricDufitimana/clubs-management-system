@@ -12,40 +12,47 @@ import Subscription from "@/components/home/subscription";
 import WebResult from "@/components/home/web-result";
 
 export const metadata: Metadata = {
-    title: "Awake Agency",
+    title: "CMS",
 };
 
 
 export default function Home() {
   return (
     <main>
-      {/* ---------------------Hero section Starts-----------------  */}
-      <HeroSection />
-      {/* ---------------------Hero section Ends-----------------  */}
+      {/* ---------------------Hero section Starts----------------- */}
+      <section id="home">
+        <HeroSection />
+      </section>
+      {/* ---------------------Hero section Ends----------------- */}
 
-      {/* ---------------------Brand logo section Starts-----------------  */}
-      <Brand />
-      {/* ---------------------Brand logo section Ends-----------------  */}
+      {/* ---------------------About section Starts----------------- */}
+      <section id="about">
+        <Brand />
+        <WebResult />
+      </section>
+      {/* ---------------------About section Ends----------------- */}
 
-      {/* ---------------------Web result section Starts-----------------  */}
-      <WebResult />
-      {/* ---------------------Web result section Ends-----------------  */}
+      {/* ---------------------Features section Starts----------------- */}
+      <section id="features">
+        <Innovation />
+      </section>
+      {/* ---------------------Features section Ends----------------- */}
 
-      {/* ---------------------Innovation section Starts-----------------  */}
-      <Innovation />
-      {/* ---------------------Innovation section Ends-----------------  */}
-
-      {/* ---------------------Customer Stories section Starts-----------------  */}
-      <CustomerStories />
-      {/* ---------------------Customer Stories section Ends-----------------  */}
+      {/* ---------------------Reviews section Starts----------------- */}
+      <section id="reviews">
+        <CustomerStories />
+      </section>
+      {/* ---------------------Reviews section Ends----------------- */}
 
       {/* ---------------------Subscription section Starts-----------------  */}
       <Subscription />
       {/* ---------------------Subscription section Ends-----------------  */}
 
-      {/* ---------------------Faq section Starts-----------------  */}
-      <Faq />
-      {/* ---------------------Faq section Ends-----------------  */}
+      {/* ---------------------Faq section Starts----------------- */}
+      <section id="faq">
+        <Faq />
+      </section>
+      {/* ---------------------Faq section Ends----------------- */}
 
       {/* ---------------------Solutions section Starts-----------------  */}
       <Solutions />

@@ -4,18 +4,21 @@ import { useEffect, useRef, useState } from 'react'
 import { signOut, useSession } from 'next-auth/react'
 import { Icon } from '@iconify/react/dist/iconify.js'
 import Image from 'next/image'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import HeaderLink from './Navigation/HeaderLink'
 import Logo from './Logo'
 import MobileHeader from './Navigation/MobileHeader'
 import ThemeToggler from './ThemeToggle'
+import { useCurrentUser } from '@/hooks/use-current-user'
 
 const Header = () => {
   const { data: session } = useSession()
+  const { user, loading } = useCurrentUser()
+  const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [menuData, setMenuData] = useState<any[]>([]);
-  const [user, setUser] = useState<{ user: any } | null>(null)
   const [sticky, setSticky] = useState(false)
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const pathname = usePathname()
   const hasMounted = useRef(false);
 
@@ -25,10 +28,6 @@ const Header = () => {
 
   useEffect(() => {
         window.addEventListener("scroll", handleScroll);
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
 
         // Run only once on initial mount
         if (!hasMounted.current) {
@@ -54,10 +53,28 @@ const Header = () => {
     }, [pathname]);
 
   const handleSignOut = () => {
-    localStorage.removeItem('user')
     signOut()
-    setUser(null)
+    setProfileDropdownOpen(false)
   }
+
+  const handleGoToDashboard = () => {
+    router.push('/dashboard')
+    setProfileDropdownOpen(false)
+  }
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileDropdownOpen && 
+          !(event.target as Element).closest('.profile-dropdown') &&
+          !(event.target as Element).closest('.profile-trigger')) {
+        setProfileDropdownOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [profileDropdownOpen])
 
   return (
     <>
@@ -80,28 +97,59 @@ const Header = () => {
               </ul>
             </div>
             <div className='flex items-center gap-1 xl:gap-4'>
-              {/* ---------------------SignUp SignIn Button-----------------  */}
-              {user?.user || session?.user ? (
-                <div className='hidden lg:flex gap-4'>
+              {/* ---------------------Profile Dropdown-----------------  */}
+              {(user?.id || session?.user) ? (
+                <div className='relative profile-dropdown'>
                   <button
-                    onClick={() => handleSignOut()}
-                    className='flex group font-normal items-center gap-1 transition-all duration-200 ease-in-out text-white px-4 py-2 bg-dark_black dark:bg-white/15 rounded-full hover:text-dark_black hover:bg-white dark:hover:bg-white/5 dark:hover:text-white border border-dark_black'>
-                    Sign Out
-                    <Icon icon='solar:logout-outline' width='25' height='25' />
-                  </button>
-                  <div className='relative group'>
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className='profile-trigger flex items-center gap-2 p-2 rounded-full hover:bg-dark_black/5 dark:hover:bg-white/5 transition-colors duration-200'
+                  >
                     <Image
                       src='/images/home/avatar_1.jpg'
-                      alt='Image'
+                      alt='Profile'
                       width={40}
                       height={40}
                       quality={100}
-                      className='rounded-full cursor-pointer'
+                      className='rounded-full'
                     />
-                    <p className='absolute w-fit text-sm text-center z-10 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity duration-200 bg-white dark:bg-white/5 text-dark_black/60 p-1 min-w-28 rounded-lg shadow-2xl top-full left-1/2 transform -translate-x-1/2 mt-3'>
-                      {user?.user || session?.user?.name}
-                    </p>
-                  </div>
+                    <Icon 
+                      icon='solar:chevron-down-bold' 
+                      width='16' 
+                      height='16' 
+                      className={`transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  
+                  {profileDropdownOpen && (
+                    <div className='absolute right-0 mt-2 w-56 bg-white dark:bg-dark_black rounded-lg shadow-lg border border-dark_black/10 dark:border-white/10 overflow-hidden profile-dropdown'>
+                      <div className='px-4 py-3 border-b border-dark_black/10 dark:border-white/10'>
+                        <p className='text-sm font-medium text-dark_black dark:text-white'>
+                          {user?.displayName || session?.user?.name || 'User'}
+                        </p>
+                        <p className='text-xs text-dark_black/60 dark:text-white/60 mt-1'>
+                          {user?.email || session?.user?.email || 'user@example.com'}
+                        </p>
+                      </div>
+                      
+                      <div className='py-2'>
+                        <button
+                          onClick={handleGoToDashboard}
+                          className='flex items-center gap-3 w-full px-4 py-2 text-sm text-dark_black dark:text-white hover:bg-dark_black/5 dark:hover:bg-white/5 transition-colors duration-200'
+                        >
+                          <Icon icon='solar:widget-5-bold-duotone' width='18' height='18' />
+                          Dashboard
+                        </button>
+                        
+                        <button
+                          onClick={handleSignOut}
+                          className='flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200'
+                        >
+                          <Icon icon='solar:logout-3-bold-duotone' width='18' height='18' />
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className='flex items-center gap-2'>
@@ -111,7 +159,7 @@ const Header = () => {
                     Sign In
                   </Link>
                   <Link
-                    href={'/signup'}
+                    href={'/not-made'}
                     className='hidden lg:block text-white px-2.5 xl:px-4 py-2  bg-dark_black dark:bg-white/20 rounded-full hover:opacity-90'>
                     Sign Up
                   </Link>
@@ -181,30 +229,35 @@ const Header = () => {
                 <MobileHeader key={index} item={item} />
               ))}
               <div className='flex flex-col items-center gap-3 px-2 mt-2'>
-                {user || session?.user ? (
+                {(user?.id || session?.user) ? (
                   <>
-                    <button
-                      onClick={() => signOut()}
-                      className='flex w-full group font-normal items-center gap-2 transition-all duration-200 ease-in-out text-white dark:text-dark_black px-4 py-2 bg-dark_black rounded-md hover:text-dark_black hover:bg-white border border-dark_black'>
-                      Sign Out
-                      <Icon
-                        icon='solar:logout-outline'
-                        width='25'
-                        height='25'
-                      />
-                    </button>
-                    <div className='group flex gap-2 items-center w-full border border-dark_black dark:border-white px-4 py-2 rounded-md hover:bg-dark_black transition-all duration-200 ease-in-out'>
-                      <Image
-                        src='/images/home/avatar_1.jpg'
-                        alt='Image'
-                        width={25}
-                        height={25}
-                        quality={100}
-                        className='rounded-full cursor-pointer'
-                      />
-                      <p className='group-hover:text-white text-dark_black dark:text-white w-full capitalize'>
-                        {user?.user?.email || session?.user?.name}
-                      </p>
+                    <div className='w-full border border-dark_black dark:border-white/10 rounded-lg overflow-hidden'>
+                      <div className='px-4 py-3 bg-dark_black/5 dark:bg-white/5 border-b border-dark_black/10 dark:border-white/10'>
+                        <p className='text-sm font-medium text-dark_black dark:text-white'>
+                          {user?.displayName || session?.user?.name || 'User'}
+                        </p>
+                        <p className='text-xs text-dark_black/60 dark:text-white/60 mt-1'>
+                          {user?.email || session?.user?.email || 'user@example.com'}
+                        </p>
+                      </div>
+                      
+                      <div className='py-2'>
+                        <button
+                          onClick={() => router.push('/dashboard')}
+                          className='flex items-center gap-3 w-full px-4 py-2 text-sm text-dark_black dark:text-white hover:bg-dark_black/5 dark:hover:bg-white/5 transition-colors duration-200'
+                        >
+                          <Icon icon='solar:widget-5-bold-duotone' width='18' height='18' />
+                          Dashboard
+                        </button>
+                        
+                        <button
+                          onClick={() => signOut()}
+                          className='flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-200'
+                        >
+                          <Icon icon='solar:logout-3-bold-duotone' width='18' height='18' />
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
                   </>
                 ) : (
@@ -215,7 +268,7 @@ const Header = () => {
                       Sign In
                     </Link>
                     <Link
-                      href={'/signup'}
+                      href={'/not-made'}
                       className='w-full text-white dark:text-dark_black px-4 py-2 bg-dark_black dark:bg-white rounded-md hover:opacity-90'>
                       Sign Up
                     </Link>

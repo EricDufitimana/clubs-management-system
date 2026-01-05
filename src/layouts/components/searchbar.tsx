@@ -5,6 +5,7 @@ import type { BoxProps } from '@mui/material/Box';
 import { useState, useCallback } from 'react';
 import { varAlpha } from 'minimal-shared/utils';
 import { alpha } from '@mui/material/styles';
+import { useRouter } from 'next/navigation';
 
 import Box from '@mui/material/Box';
 import Slide from '@mui/material/Slide';
@@ -21,8 +22,10 @@ import { Iconify } from '@/components/iconify';
 
 export function Searchbar({ sx, ...other }: BoxProps) {
   const theme = useTheme();
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleOpen = useCallback(() => {
     setOpen((prev) => !prev);
@@ -30,7 +33,22 @@ export function Searchbar({ sx, ...other }: BoxProps) {
 
   const handleClose = useCallback(() => {
     setOpen(false);
+    setSearchQuery('');
   }, []);
+
+  const handleSearch = useCallback(() => {
+    if (searchQuery.trim()) {
+      // Navigate to search results page with query parameter
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      handleClose();
+    }
+  }, [searchQuery, router, handleClose]);
+
+  const handleKeyPress = useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleSearch();
+    }
+  }, [handleSearch]);
 
   return (
     <ClickAwayListener onClickAway={handleClose}>
@@ -70,7 +88,10 @@ export function Searchbar({ sx, ...other }: BoxProps) {
               autoFocus
               fullWidth
               disableUnderline
-              placeholder="Search…"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyPress={handleKeyPress}
               startAdornment={
                 <InputAdornment position="start">
                   <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
@@ -78,7 +99,7 @@ export function Searchbar({ sx, ...other }: BoxProps) {
               }
               sx={{ fontWeight: 'fontWeightBold' }}
             />
-            <Button variant="contained" onClick={handleClose}>
+            <Button variant="contained" onClick={handleSearch}>
               Search
             </Button>
           </Box>

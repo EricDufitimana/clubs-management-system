@@ -1,3 +1,7 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useTheme } from 'next-themes';
 import type { ThemeProviderProps as MuiThemeProviderProps } from '@mui/material/styles';
 
 import CssBaseline from '@mui/material/CssBaseline';
@@ -15,12 +19,27 @@ export type ThemeProviderProps = Partial<MuiThemeProviderProps> & {
 };
 
 export function ThemeProvider({ themeOverrides, children, ...other }: ThemeProviderProps) {
+  // Only light theme - dark mode completely removed
   const theme = createTheme({
-    themeOverrides,
+    themeOverrides: {
+      ...themeOverrides,
+      colorSchemes: {
+        light: {
+          palette: {
+            mode: 'light' as const,
+          },
+        },
+      },
+      defaultColorScheme: 'light',
+    },
   });
 
   return (
-    <ThemeVarsProvider disableTransitionOnChange theme={theme} {...other}>
+    <ThemeVarsProvider 
+      disableTransitionOnChange 
+      theme={theme} 
+      {...other}
+    >
       <CssBaseline />
       {children}
     </ThemeVarsProvider>

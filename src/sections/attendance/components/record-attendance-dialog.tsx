@@ -77,6 +77,7 @@ export function RecordAttendanceDialog({
   const [filterGrade, setFilterGrade] = useState<string>('all');
   const [filterCombination, setFilterCombination] = useState<string>('all');
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
     message: '',
@@ -223,6 +224,27 @@ export function RecordAttendanceDialog({
               disabled={loadingSessions}
               SelectProps={{
                 displayEmpty: true,
+                open: isSelectOpen,
+                onOpen: () => setIsSelectOpen(true),
+                onClose: () => setIsSelectOpen(false),
+                renderValue: (selected) => {
+                  if (!selected || loadingSessions) {
+                    return null; // Hide placeholder when closed
+                  }
+                  const session = sessions.find(s => s.id === selected);
+                  if (!session) return null;
+                  
+                  return (
+                    <Box>
+                      <Typography variant="body2">
+                        {fDate(session.date, 'DD MMM YYYY')} - {fDate(session.date, 'HH:mm')}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {session.club_name} - {session.notes}
+                      </Typography>
+                    </Box>
+                  );
+                },
               }}
               InputProps={{
                 endAdornment: loadingSessions ? (
@@ -255,9 +277,25 @@ export function RecordAttendanceDialog({
             <>
               {/* Students List */}
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                  Students ({filteredStudents.length})
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="subtitle2">
+                    Students ({filteredStudents.length})
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                    onClick={() => {
+                      const newAttendance: Record<string, AttendanceStatus> = {};
+                      filteredStudents.forEach(student => {
+                        newAttendance[student.id] = 'present';
+                      });
+                      setAttendance(prev => ({ ...prev, ...newAttendance }));
+                    }}
+                  >
+                    Mark All as Present
+                  </Button>
+                </Box>
                 <Stack spacing={1}>
                   {filteredStudents.map((student) => {
                     const studentAttendance = attendance[student.id] || '';
