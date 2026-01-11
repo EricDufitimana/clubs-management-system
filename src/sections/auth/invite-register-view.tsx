@@ -127,7 +127,7 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
         });
         // Redirect to dashboard after 2 seconds
         setTimeout(() => {
-          router.push('/dashboard/admin');
+          router.push('/');
         }, 2000);
       }
     } catch (error) {
