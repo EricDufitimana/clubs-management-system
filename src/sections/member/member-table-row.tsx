@@ -37,22 +37,24 @@ type MemberTableRowProps = {
   selected: boolean;
   onSelectRow: () => void;
   onRemove?: () => void;
+  onDelete?: () => void;
   isSuperAdmin?: boolean;
 };
 
-export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAdmin = false }: MemberTableRowProps) {
+export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete, isSuperAdmin = false }: MemberTableRowProps) {
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
   }, []);
 
   const handleClosePopover = useCallback(() => {
-    if (!isRemoving) {
+    if (!isRemoving && !isDeleting) {
       setOpenPopover(null);
     }
-  }, [isRemoving]);
+  }, [isRemoving, isDeleting]);
 
   const handleRemove = useCallback(async () => {
     if (!onRemove || isRemoving) return;
@@ -65,6 +67,18 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
       setOpenPopover(null);
     }
   }, [onRemove, isRemoving]);
+
+  const handleDelete = useCallback(async () => {
+    if (!onDelete || isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      await onDelete();
+    } finally {
+      setIsDeleting(false);
+      setOpenPopover(null);
+    }
+  }, [onDelete, isDeleting]);
 
 
   return (
@@ -153,7 +167,7 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
           sx={{
             p: 0.5,
             gap: 0.5,
-            width: 140,
+            width: 180,
             display: 'flex',
             flexDirection: 'column',
             [`& .${menuItemClasses.root}`]: {
@@ -164,17 +178,43 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
             },
           }}
         >
-          {onRemove && (
-            <MenuItem 
-              onClick={handleRemove}
-              disabled={isRemoving}
-              sx={{ color: 'error.main' }}
-            >
-              {isRemoving ? (
-                <CircularProgress size={16} sx={{ mr: 1 }} />
-              ) : null}
-              {isRemoving ? 'Removing...' : 'Remove'}
-            </MenuItem>
+          {isSuperAdmin ? (
+            <>
+              <MenuItem disabled sx={{ color: 'text.secondary' }}>
+                <Iconify icon="eva:lock-outline" sx={{ mr: 1 }} />
+                Super Admin View
+              </MenuItem>
+              <MenuItem disabled sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>
+                Contact club admin to manage members
+              </MenuItem>
+            </>
+          ) : (
+            <>
+              {onRemove && (
+                <MenuItem 
+                  onClick={handleRemove}
+                  disabled={isRemoving || isDeleting}
+                  sx={{ color: 'warning.main' }}
+                >
+                  {isRemoving ? (
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                  ) : null}
+                  {isRemoving ? 'Marking as left...' : 'Mark as Left'}
+                </MenuItem>
+              )}
+              {onDelete && (
+                <MenuItem 
+                  onClick={handleDelete}
+                  disabled={isRemoving || isDeleting}
+                  sx={{ color: 'error.main' }}
+                >
+                  {isDeleting ? (
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                  ) : null}
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </MenuItem>
+              )}
+            </>
           )}
         </MenuList>
       </Popover>

@@ -30,20 +30,28 @@ export function ClubProvider({ children }: { children: ReactNode }) {
   });
 
   const clubs = clubsData || [];
+  
+  console.log('[CLUB_CONTEXT] Raw clubs data from tRPC:', clubsData);
+  console.log('[CLUB_CONTEXT] Processed clubs:', clubs);
+  console.log('[CLUB_CONTEXT] Is loading:', isLoading);
 
   // Auto-select first club if none selected
   useEffect(() => {
+    console.log('[CLUB_CONTEXT] useEffect - selectedClub:', selectedClub, 'clubs.length:', clubs.length);
     if (!selectedClub && clubs.length > 0) {
       // Try to restore from localStorage
       const savedClubId = localStorage.getItem('selectedClubId');
+      console.log('[CLUB_CONTEXT] Saved club ID from localStorage:', savedClubId);
       if (savedClubId) {
         const savedClub = clubs.find((c) => c.id === savedClubId);
         if (savedClub) {
+          console.log('[CLUB_CONTEXT] Restoring saved club:', savedClub);
           setSelectedClubState(savedClub);
           return;
         }
       }
       // Otherwise select first club
+      console.log('[CLUB_CONTEXT] Selecting first club:', clubs[0]);
       setSelectedClubState(clubs[0]);
     }
   }, [clubs, selectedClub]);

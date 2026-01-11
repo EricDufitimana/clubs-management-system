@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { InviteRegisterView } from '@/sections/auth/invite-register-view';
+import AuthLayout from '@/components/auth/invite-register';
 
 // ----------------------------------------------------------------------
 
@@ -13,5 +14,12 @@ type PageProps = {
 
 export default async function RegisterWithInvitePage({ params }: PageProps) {
   const { token } = await params;
-  return <InviteRegisterView token={token} />;
+  return (
+    <AuthLayout 
+      title="Complete Your Registration"
+      subtitle="You've been invited to join as a club leader. Please complete your registration below."
+    >
+      <InviteRegisterView token={token} />
+    </AuthLayout>
+  );
 }

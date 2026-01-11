@@ -36,6 +36,7 @@ import { emptyRows, applyFilter, getComparator } from '@/sections/member/utils';
 
 import { useTable } from './use-table';
 import { AddMemberDialog } from '../components/add-member-dialog';
+import { BulkImportDialog } from '../components/bulk-import-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -53,6 +54,7 @@ export function AdminUsersView() {
   const trpc = useTRPC();
   const table = useTable();
   const [openDialog, setOpenDialog] = useState(false);
+  const [openBulkImportDialog, setOpenBulkImportDialog] = useState(false);
   const [filterName, setFilterName] = useState('');
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
@@ -64,6 +66,10 @@ export function AdminUsersView() {
   const { selectedClub } = useClubContext();
   const currentUserClub = selectedClub?.club_name || null;
   const currentUserClubId = selectedClub?.id || null;
+
+  console.log('[ADMIN_MEMBERS] selectedClub:', selectedClub);
+  console.log('[ADMIN_MEMBERS] currentUserClub:', currentUserClub);
+  console.log('[ADMIN_MEMBERS] currentUserClubId:', currentUserClubId);
 
   // Fetch members using tRPC (filtered by selected club)
   const { data: membersData, isLoading: loading, refetch } = useQuery({
@@ -152,6 +158,14 @@ export function AdminUsersView() {
     setSnackbar(prev => ({ ...prev, open: false }));
   }, []);
 
+  const handleOpenBulkImportDialog = useCallback(() => {
+    setOpenBulkImportDialog(true);
+  }, []);
+
+  const handleCloseBulkImportDialog = useCallback(() => {
+    setOpenBulkImportDialog(false);
+  }, []);
+
   return (
     <DashboardContent>
       <Box
@@ -186,6 +200,15 @@ export function AdminUsersView() {
             disabled={!currentUserClubId}
           >
             Add Members
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Iconify icon="solar:file-import-bold-duotone" />}
+            onClick={handleOpenBulkImportDialog}
+            disabled={!currentUserClubId}
+          >
+            Bulk Import
           </Button>
         </Box>
       </Box>
@@ -283,6 +306,14 @@ export function AdminUsersView() {
         open={openDialog} 
         onClose={handleCloseDialog} 
         onAdd={handleAddUser} 
+        onError={handleError}
+        clubId={currentUserClubId || undefined}
+      />
+      
+      <BulkImportDialog
+        open={openBulkImportDialog}
+        onClose={handleCloseBulkImportDialog}
+        onSuccess={handleAddUser}
         onError={handleError}
         clubId={currentUserClubId || undefined}
       />

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <main>
+    <main className="overflow-hidden">
       {/* ---------------------Hero section Starts----------------- */}
       <section id="home">
         <HeroSection />
@@ -45,7 +45,7 @@ export default function Home() {
       {/* ---------------------Reviews section Ends----------------- */}
 
       {/* ---------------------Subscription section Starts-----------------  */}
-      <Subscription />
+      {/* <Subscription /> */}
       {/* ---------------------Subscription section Ends-----------------  */}
 
       {/* ---------------------Faq section Starts----------------- */}

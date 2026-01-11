@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useMutation } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import SocialSignIn from '../SocialSignIn'
 import Loader from '../../shared/loader'
 import Logo from '../../layout/header/Logo'
@@ -27,6 +28,7 @@ const Signin = () => {
   const loginMutation = useMutation({
     ...trpc.auth.login.mutationOptions(),
     onSuccess: (data) => {
+      toast.success('Login successful! Redirecting...')
       // Redirect based on user role
       setTimeout(() => {
         if (data?.redirectPath) {
@@ -38,7 +40,19 @@ const Signin = () => {
     },
     onError: (error) => {
       setIsLoggingIn(false)
-      console.error('Login error:', error.message || 'An error occurred while signing in')
+      
+      // Handle different types of errors with appropriate toast messages
+      if (error.message.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please try again.')
+      } else if (error.message.includes('User account not found')) {
+        toast.error('Account not found. Please contact support.')
+      } else if (error.message.includes('Unexpected token')) {
+        toast.error('Server error. Please try again later.')
+      } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+        toast.error('Network error. Please check your connection.')
+      } else {
+        toast.error(error.message || 'An error occurred while signing in')
+      }
     },
   })
 
@@ -78,6 +92,22 @@ const Signin = () => {
       password: loginData.password,
     })
   }
+
+  // Add toast for validation errors
+  const handleValidationErrors = () => {
+    if (validationErrors.email) {
+      toast.error(validationErrors.email)
+    } else if (validationErrors.password) {
+      toast.error(validationErrors.password)
+    }
+  }
+
+  // Show validation errors when they change
+  useEffect(() => {
+    if (validationErrors.email || validationErrors.password) {
+      handleValidationErrors()
+    }
+  }, [validationErrors])
 
   return (
     <section>

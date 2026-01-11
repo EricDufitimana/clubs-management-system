@@ -2,13 +2,12 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -32,21 +31,12 @@ export function SignInView() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
-    open: false,
-    message: '',
-    severity: 'error'
-  });
   
   const trpc = useTRPC();
   const loginMutation = useMutation({
     ...trpc.auth.login.mutationOptions(),
     onSuccess: (data) => {
-      setSnackbar({
-        open: true,
-        message: 'Login successful',
-        severity: 'success'
-      });
+      toast.success('Login successful! Redirecting...')
       // Set redirecting state to keep spinner going
       setIsRedirecting(true);
       // Handle redirect on client side - use custom redirect if available
@@ -59,11 +49,18 @@ export function SignInView() {
       }
     },
     onError: (error) => {
-      setSnackbar({
-        open: true,
-        message: error.message || 'An error occurred',
-        severity: 'error'
-      });
+      // Handle different types of errors with appropriate toast messages
+      if (error.message.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please try again.')
+      } else if (error.message.includes('User account not found')) {
+        toast.error('Account not found. Please contact support.')
+      } else if (error.message.includes('Unexpected token')) {
+        toast.error('Server error. Please try again later.')
+      } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+        toast.error('Network error. Please check your connection.')
+      } else {
+        toast.error(error.message || 'An error occurred while signing in')
+      }
     },
   })
   
@@ -113,10 +110,6 @@ export function SignInView() {
   //   }
   // }, []);
   
-  const handleCloseSnackbar = useCallback(() => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  }, []);
-
   const renderForm = (
     <Box
       component="form"
@@ -217,17 +210,6 @@ export function SignInView() {
           <Iconify width={22} icon="socials:twitter" />
         </IconButton>
       </Box>
-      
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </>
   );
 }

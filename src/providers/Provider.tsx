@@ -10,8 +10,11 @@ import { usePathname } from 'next/navigation'
 function ConditionalThemeProvider({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     
-    // Use MUI ThemeProvider for dashboard routes (required for MUI components)
-    if (pathname?.startsWith('/dashboard')) {
+    // Use MUI ThemeProvider for dashboard routes and auth pages (required for MUI components)
+    if (pathname?.startsWith('/dashboard') || 
+        pathname?.startsWith('/join-club') || 
+        pathname?.startsWith('/sign-in') || 
+        pathname?.startsWith('/register')) {
         return <ThemeProvider>{children}</ThemeProvider>
     }
     

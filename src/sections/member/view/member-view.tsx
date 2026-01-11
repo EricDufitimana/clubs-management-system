@@ -147,7 +147,7 @@ export function MemberView() {
     onSuccess: () => {
       setSnackbar({
         open: true,
-        message: 'Member removed successfully',
+        message: 'Member marked as left successfully',
         severity: 'success',
       });
       // Invalidate queries to refetch data
@@ -157,7 +157,53 @@ export function MemberView() {
     onError: (error: any) => {
       setSnackbar({
         open: true,
-        message: error.message || 'Failed to remove member',
+        message: error.message || 'Failed to mark member as left',
+        severity: 'error',
+      });
+    },
+  });
+
+  // Delete member mutation
+  const deleteMemberMutation = useMutation({
+    ...trpc.students.deleteMember.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Member deleted successfully',
+        severity: 'success',
+      });
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: trpc.users.getUsersByClub.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.users.getAllUsers.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to delete member',
+        severity: 'error',
+      });
+    },
+  });
+
+  // Delete multiple members mutation
+  const deleteMultipleMembersMutation = useMutation({
+    ...trpc.students.deleteMultipleMembers.mutationOptions(),
+    onSuccess: (data) => {
+      setSnackbar({
+        open: true,
+        message: data.message || 'Members deleted successfully',
+        severity: 'success',
+      });
+      // Clear selection
+      table.setSelected([]);
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: trpc.users.getUsersByClub.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.users.getAllUsers.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to delete members',
         severity: 'error',
       });
     },
@@ -244,6 +290,25 @@ export function MemberView() {
     });
   }, [removeStudentMutation, currentUserClubId]);
 
+  const handleDelete = useCallback((studentId: string) => {
+    deleteMemberMutation.mutate({
+      studentId,
+      clubId: currentUserClubId || undefined,
+    });
+  }, [deleteMemberMutation, currentUserClubId]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (table.selected.length === 0) return;
+    
+    // Show confirmation dialog
+    if (window.confirm(`Are you sure you want to delete ${table.selected.length} member(s)? This action cannot be undone.`)) {
+      deleteMultipleMembersMutation.mutate({
+        studentIds: table.selected,
+        clubId: currentUserClubId || undefined,
+      });
+    }
+  }, [table.selected, deleteMultipleMembersMutation, currentUserClubId]);
+
 
   // Filter by club if super_admin and club filter is selected
   const filteredByClub = isSuperAdmin && selectedClubFilter !== 'all'
@@ -322,6 +387,7 @@ export function MemberView() {
             setSelectedClubFilter(club);
             table.onResetPage();
           }}
+          onDeleteSelected={!isSuperAdmin ? handleDeleteSelected : undefined}
         />
 
         <Scrollbar>
@@ -368,7 +434,8 @@ export function MemberView() {
                           row={row}
                           selected={table.selected.includes(row.id)}
                           onSelectRow={() => table.onSelectRow(row.id)}
-                          onRemove={isSuperAdmin ? undefined : () => handleRemove(row.id)}
+                          onRemove={() => handleRemove(row.id)}
+                          onDelete={() => handleDelete(row.id)}
                           isSuperAdmin={isSuperAdmin}
                         />
                       ))}
@@ -383,13 +450,23 @@ export function MemberView() {
                         <TableCell align="center" colSpan={isSuperAdmin ? 6 : 6}>
                           <Box sx={{ py: 15, textAlign: 'center' }}>
                             <Typography variant="h6" sx={{ mb: 1 }}>
-                              {isSuperAdmin ? 'No Members Found' : 'No Members Found'}
+                              No Members Found
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                               {isSuperAdmin 
-                                ? 'There are no members in the system yet.' 
-                                : 'There are no members in the system yet.'}
+                                ? 'There are no members in the system yet. Club leaders can add members to their clubs.' 
+                                : 'There are no members in your club yet. Use the "Add Members" button to get started.'}
                             </Typography>
+                            {!isSuperAdmin && currentUserClubId && (
+                              <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenDialog}
+                                sx={{ mt: 2 }}
+                              >
+                                Add Your First Member
+                              </Button>
+                            )}
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -502,6 +579,7 @@ export function useTable() {
     onChangePage,
     onSelectAllRows,
     onChangeRowsPerPage,
+    setSelected,
   };
 }
 

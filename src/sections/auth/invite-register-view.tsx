@@ -147,7 +147,7 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
         <CircularProgress />
       </Box>
     );
@@ -155,7 +155,7 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
 
   if (!inviteInfo) {
     return (
-      <Box sx={{ textAlign: 'center' }}>
+      <Box sx={{ textAlign: 'center', py: 4 }}>
         <Alert severity="error" sx={{ mb: 2 }}>
           Invalid or expired invitation
         </Alert>
@@ -172,12 +172,12 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
       onSubmit={handleRegister}
       sx={{
         display: 'flex',
-        alignItems: 'flex-end',
         flexDirection: 'column',
+        gap: 2,
       }}
     >
-      <Box sx={{ width: '100%', mb: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
-        <Typography variant="subtitle1" gutterBottom>
+      <Box sx={{ width: '100%', p: 2.5, bgcolor: 'background.neutral', borderRadius: 1, mb: 0 }}>
+        <Typography variant="subtitle2" gutterBottom>
           Club: <strong>{inviteInfo.clubName}</strong>
         </Typography>
         <Typography variant="body2" color="text.secondary">
@@ -190,7 +190,6 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
           display: 'flex',
           gap: 2,
           width: '100%',
-          mb: 3,
         }}
       >
         <TextField
@@ -199,8 +198,16 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
           label="First name"
           required
           disabled={submitting}
+          size="medium"
           slotProps={{
             inputLabel: { shrink: true },
+            input: {
+              sx: {
+                fontSize: '1.1rem',
+                height: '64px',
+                padding: '16px 14px',
+              }
+            }
           }}
         />
         <TextField
@@ -209,8 +216,16 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
           label="Last name"
           required
           disabled={submitting}
+          size="medium"
           slotProps={{
             inputLabel: { shrink: true },
+            input: {
+              sx: {
+                fontSize: '1.1rem',
+                height: '64px',
+                padding: '16px 14px',
+              }
+            }
           }}
         />
       </Box>
@@ -223,9 +238,15 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
         defaultValue={inviteInfo.email}
         required
         disabled={submitting}
-        sx={{ mb: 3 }}
+        size="medium"
         slotProps={{
           inputLabel: { shrink: true },
+          input: {
+            sx: {
+              fontSize: '1rem',
+              height: '56px',
+            }
+          }
         }}
       />
 
@@ -236,19 +257,23 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
         type={showPassword ? 'text' : 'password'}
         required
         disabled={submitting}
+        size="medium"
         slotProps={{
           inputLabel: { shrink: true },
           input: {
+            sx: {
+              fontSize: '1rem',
+              height: '56px',
+            },
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
                   <Iconify icon={showPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
                 </IconButton>
               </InputAdornment>
             ),
           },
         }}
-        sx={{ mb: 3 }}
       />
 
       <TextField
@@ -258,19 +283,23 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
         type={showConfirmPassword ? 'text' : 'password'}
         required
         disabled={submitting}
+        size="medium"
         slotProps={{
           inputLabel: { shrink: true },
           input: {
+            sx: {
+              fontSize: '1rem',
+              height: '56px',
+            },
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end">
+                <IconButton onClick={() => setShowConfirmPassword(!showConfirmPassword)} edge="end" size="small">
                   <Iconify icon={showConfirmPassword ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
                 </IconButton>
               </InputAdornment>
             ),
           },
         }}
-        sx={{ mb: 3 }}
       />
 
       <Button
@@ -281,6 +310,11 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
         variant="contained"
         disabled={submitting}
         startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : null}
+        sx={{ 
+          mt: 0.5,
+          height: '56px',
+          fontSize: '1rem'
+        }}
       >
         {submitting ? 'Completing Registration...' : 'Complete Registration'}
       </Button>
@@ -289,27 +323,6 @@ export function InviteRegisterView({ token }: InviteRegisterViewProps) {
 
   return (
     <>
-      <Box
-        sx={{
-          gap: 1.5,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          mb: 5,
-        }}
-      >
-        <Typography variant="h5">Complete Your Registration</Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: 'text.secondary',
-            textAlign: 'center',
-          }}
-        >
-          You've been invited to join as a club leader. Please complete your registration below.
-        </Typography>
-  
-      </Box>
       {renderForm}
       
       <Snackbar

@@ -9,6 +9,10 @@ export async function completeInviteRegistration(
 ) {
   const supabase = await createClient();
   
+  let dbUser: any;
+  let authUserId: string;
+  let isNewUser: boolean;
+  
   try {
     // 1. Validate invite first (before any user operations)
     const invite = await prisma.clubInvite.findUnique({
@@ -55,28 +59,65 @@ export async function completeInviteRegistration(
       return { error: 'Email must match the invitation email' };
     }
 
-    // 3. Check if user already exists in Supabase Auth
-    console.log('[INVITE_REGISTRATION] Checking for existing user...');
-    const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
-    const existingAuthUser = existingAuthUsers?.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+    // 3. Check if user already exists in database tables first
+    console.log('[INVITE_REGISTRATION] Checking for existing user in database...');
+    
+    // Check if user exists in users table (no email field in User model, so check by name only)
+    const existingDbUser = await prisma.user.findFirst({
+      where: { 
+        first_name,
+        last_name
+      }
+    });
 
-    let authUserId: string;
-    let dbUser: any;
-    let isNewUser = false;
+    if (existingDbUser) {
+      console.log('[INVITE_REGISTRATION] Found existing user in database:', existingDbUser.id);
+      
+      // Check if user is already a leader for this club
+      const existingLeader = await prisma.$queryRaw<Array<{id: bigint}>>`
+        SELECT id FROM club_leaders 
+        WHERE club_id = ${invite.club_id}::bigint 
+        AND user_id = ${existingDbUser.id}::bigint
+      `;
 
-    if (existingAuthUser) {
-      // User already exists in Auth, use their ID
-      console.log('[INVITE_REGISTRATION] Found existing auth user:', existingAuthUser.id);
-      authUserId = existingAuthUser.id;
+      if (existingLeader && existingLeader.length > 0) {
+        // User is in both users table AND club_leaders table for this club
+        console.log('[INVITE_REGISTRATION] User is already registered as a leader of this club');
+        
+        // Mark invite as used if not already used
+        if (!invite.used_at) {
+          await prisma.clubInvite.update({
+            where: { id: invite.id },
+            data: { used_at: new Date() }
+          });
+        }
+        
+        return {
+          success: true,
+          message: `You are already registered as a leader of ${club.club_name}`,
+          clubId: invite.club_id.toString(),
+          userId: existingDbUser.auth_user_id,
+          alreadyRegistered: true
+        };
+      }
 
-      // Check if user exists in database
-      dbUser = await prisma.user.findUnique({
-        where: { auth_user_id: authUserId }
-      });
+      console.log('[INVITE_REGISTRATION] User exists in users table but not in club_leaders - adding leadership...');
+      // User exists in users table but not in club_leaders for this club
+      // Continue to add them to club_leaders table below
+      dbUser = existingDbUser;
+      authUserId = existingDbUser.auth_user_id!;
+      isNewUser = false;
+    } else {
+      // User doesn't exist in database, check if they exist in Supabase Auth
+      console.log('[INVITE_REGISTRATION] User not in database, checking Supabase Auth...');
+      const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
+      const existingAuthUser = existingAuthUsers?.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
 
-      if (!dbUser) {
-        // Create database record for existing auth user
-        console.log('[INVITE_REGISTRATION] Creating database record for existing auth user...');
+      if (existingAuthUser) {
+        // User exists in Supabase Auth but not in database - create database record
+        console.log('[INVITE_REGISTRATION] Found existing auth user, creating database record...');
+        authUserId = existingAuthUser.id;
+        
         dbUser = await prisma.user.create({
           data: {
             auth_user_id: authUserId,
@@ -85,72 +126,49 @@ export async function completeInviteRegistration(
             role: 'admin'
           }
         });
-      }
+        
+        console.log('[INVITE_REGISTRATION] Database record created for existing auth user');
+        isNewUser = false;
+      } else {
+        // New user - create everything
+        console.log('[INVITE_REGISTRATION] Creating new user account...');
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              first_name: first_name.trim(),
+              last_name: last_name.trim(),
+              display_name: `${first_name.trim()} ${last_name.trim()}`.trim()
+            }
+          }
+        });
 
-      console.log('[INVITE_REGISTRATION] Using existing user with ID:', dbUser.id);
-    } else {
-      // New user, create account
-      console.log('[INVITE_REGISTRATION] Creating new user account...');
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
+        if (signUpError) {
+          console.error('[INVITE_REGISTRATION] Signup error:', signUpError);
+          return { error: signUpError.message || 'Failed to create account' };
+        }
+
+        if (!signUpData.user) {
+          return { error: 'Failed to create user account' };
+        }
+
+        authUserId = signUpData.user.id;
+        console.log('[INVITE_REGISTRATION] User created with ID:', authUserId);
+
+        // Create user in users table
+        dbUser = await prisma.user.create({
           data: {
+            auth_user_id: authUserId,
             first_name: first_name.trim(),
             last_name: last_name.trim(),
-            display_name: `${first_name.trim()} ${last_name.trim()}`.trim()
+            role: 'admin'
           }
-        }
-      });
+        });
 
-      if (signUpError) {
-        console.error('[INVITE_REGISTRATION] Signup error:', signUpError);
-        return { error: signUpError.message || 'Failed to create account' };
+        console.log('[INVITE_REGISTRATION] User record created with ID:', dbUser.id);
+        isNewUser = true;
       }
-
-      if (!signUpData.user) {
-        return { error: 'Failed to create user account' };
-      }
-
-      authUserId = signUpData.user.id;
-      console.log('[INVITE_REGISTRATION] User created with ID:', authUserId);
-
-      // 4. Create user in users table
-      console.log('[INVITE_REGISTRATION] Creating user record in database...');
-      dbUser = await prisma.user.create({
-        data: {
-          auth_user_id: authUserId,
-          first_name: first_name.trim(),
-          last_name: last_name.trim(),
-          role: 'admin' // Default role for club officers
-        }
-      });
-
-      console.log('[INVITE_REGISTRATION] User record created with ID:', dbUser.id);
-      isNewUser = true;
-    }
-
-    // 5. Check if user is already a leader for this club
-    const existingLeader = await prisma.$queryRaw<Array<{id: bigint}>>`
-      SELECT id FROM club_leaders 
-      WHERE club_id = ${invite.club_id}::bigint 
-      AND user_id = ${dbUser.id}::bigint
-    `;
-
-    if (existingLeader && existingLeader.length > 0) {
-      // User is already a leader of this club, just mark invite as used
-      await prisma.clubInvite.update({
-        where: { id: invite.id },
-        data: { used_at: new Date() }
-      });
-      
-      return {
-        success: true,
-        message: `You are already a leader of ${club.club_name}`,
-        clubId: invite.club_id.toString(),
-        userId: authUserId,
-        existingMember: true
-      };
     }
 
     // Create club leader record
@@ -164,12 +182,12 @@ export async function completeInviteRegistration(
 
     await prisma.$executeRaw`
       INSERT INTO club_leaders (club_id, user_id, role, created_at)
-      VALUES (${invite.club_id}::bigint, ${dbUser.id}::bigint, ${dbRoleValue}::role, NOW())
+      VALUES (${invite.club_id}::bigint, ${dbUser.id}::bigint, ${dbRoleValue}, NOW())
     `;
 
     console.log('[INVITE_REGISTRATION] Club leader record created');
 
-    // 6. Mark invite as used
+    // Mark invite as used
     await prisma.clubInvite.update({
       where: { id: invite.id },
       data: { used_at: new Date() }

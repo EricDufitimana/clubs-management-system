@@ -22,6 +22,7 @@ type MemberTableToolbarProps = {
   clubs?: Array<{ id: string; club_name: string }>;
   selectedClub?: string;
   onClubChange?: (club: string) => void;
+  onDeleteSelected?: () => void;
 };
 
 export function MemberTableToolbar({ 
@@ -33,6 +34,7 @@ export function MemberTableToolbar({
   clubs = [],
   selectedClub = 'all',
   onClubChange,
+  onDeleteSelected,
 }: MemberTableToolbarProps) {
   return (
     <Toolbar
@@ -92,8 +94,8 @@ export function MemberTableToolbar({
       </Box>
 
       {numSelected > 0 ? (
-        <Tooltip title="Delete">
-          <IconButton>
+        <Tooltip title="Delete selected">
+          <IconButton onClick={onDeleteSelected}>
             <Iconify icon="solar:trash-bin-trash-bold" />
           </IconButton>
         </Tooltip>
