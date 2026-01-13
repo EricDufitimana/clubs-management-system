@@ -294,3 +294,5 @@ export function MultipleClubsReportView() {
     </DashboardContent>
   );
 }
+
+export default MultipleClubsReportView;
