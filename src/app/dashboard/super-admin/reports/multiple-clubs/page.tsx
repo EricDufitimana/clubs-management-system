@@ -21,7 +21,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Accordion from '@mui/material/Accordion';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { DashboardContent } from '@/layouts/dashboard';
 import { Iconify } from '@/components/iconify';
@@ -235,7 +234,7 @@ export function MultipleClubsReportView() {
                       </TableCell>
                       <TableCell>
                         <Accordion>
-                          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                          <AccordionSummary expandIcon={<Iconify icon="mingcute:arrow-down-line" />}>
                             <Typography variant="body2">
                               View {student.clubCount} club(s)
                             </Typography>
