@@ -153,6 +153,7 @@ export function ClubsView() {
         id: club.id,
         name: club.club_name,
         description: club.club_description,
+        category: club.category,
         members: 0, // TODO: Add members count when available
         status: club.status === 'terminated' ? 'inactive' : club.status,
       }));
@@ -307,6 +308,7 @@ export function ClubsView() {
                 headLabel={[
                   { id: 'name', label: 'Club Name' },
                   { id: 'description', label: 'Description' },
+                  { id: 'category', label: 'Category' },
                   { id: 'members', label: 'Members', align: 'center' },
                   { id: 'status', label: 'Status' },
                   { id: '' },
@@ -315,7 +317,7 @@ export function ClubsView() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>

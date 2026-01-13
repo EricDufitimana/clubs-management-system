@@ -15,6 +15,13 @@ enum UserRole {
   @@map("user_role")
 }
 
+enum ClubCategory{
+  subject_oriented_clubs
+  soft_skills_oriented_clubs
+
+  @@map("club_category")
+}
+
 enum ClubStatus {
   active
   terminated
@@ -42,6 +49,8 @@ model Club {
   club_description String     @db.Text
   status           ClubStatus @default(active)
   created_by       String     @db.Text
+  category         ClubCategory?  
+
 
   members     ClubMember[]
   leaders     ClubLeader[]

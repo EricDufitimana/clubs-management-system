@@ -15,6 +15,7 @@ type Club = {
   club_name: string;
   club_description: string;
   status: 'active' | 'terminated';
+  category: 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null;
 };
 
 type Context = {
@@ -80,8 +81,9 @@ export const createTRPCContext = cache(async (): Promise<Context> => {
         club_name: string;
         club_description: string;
         status: string;
+        category: string;
       }>>`
-        SELECT id, club_name, club_description, status::text as status
+        SELECT id, club_name, club_description, status::text as status, category::text as category
         FROM clubs
         WHERE status = 'active'
         ORDER BY club_name ASC
@@ -91,6 +93,7 @@ export const createTRPCContext = cache(async (): Promise<Context> => {
         club_name: c.club_name,
         club_description: c.club_description,
         status: c.status as 'active' | 'terminated',
+        category: c.category as 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null,
       }));
       clubIds = clubs.map(c => c.id);
     } else if (role === 'admin') {
@@ -120,8 +123,9 @@ export const createTRPCContext = cache(async (): Promise<Context> => {
         club_name: string;
         club_description: string;
         status: string;
+        category: string;
       }>>`
-        SELECT c.id, c.club_name, c.club_description, c.status::text as status
+        SELECT c.id, c.club_name, c.club_description, c.status::text as status, c.category::text as category
         FROM club_leaders cl
         JOIN clubs c ON cl.club_id = c.id
         WHERE cl.user_id = ${dbUser.id}::bigint
@@ -137,6 +141,7 @@ export const createTRPCContext = cache(async (): Promise<Context> => {
         club_name: c.club_name,
         club_description: c.club_description,
         status: c.status as 'active' | 'terminated',
+        category: c.category as 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null,
       }));
       clubIds = clubs.map(c => c.id);
       

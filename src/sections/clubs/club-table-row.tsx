@@ -21,6 +21,7 @@ export type ClubProps = {
   id: string;
   name: string;
   description: string;
+  category: 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null;
   members: number;
   status: 'active' | 'inactive';
 };
@@ -59,6 +60,11 @@ export function ClubTableRow({ row, selected, onSelectRow, onEdit, onDeactivate,
         </TableCell>
 
         <TableCell>{row.description}</TableCell>
+
+        <TableCell>
+          {row.category === 'subject_oriented_clubs' ? 'Subject Oriented' : 
+           row.category === 'soft_skills_oriented_clubs' ? 'Soft Skills Oriented' : 'null'}
+        </TableCell>
 
         <TableCell align="center">{row.members}</TableCell>
 

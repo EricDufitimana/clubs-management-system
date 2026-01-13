@@ -14,6 +14,7 @@ export const clubsRouter = createTRPCRouter({
         id: club.id.toString(),
         club_name: club.club_name,
         club_description: club.club_description,
+        category: club.category,
         status: club.status,
       }));
     } catch (error: any) {
@@ -40,6 +41,7 @@ export const clubsRouter = createTRPCRouter({
         id: club.id.toString(),
         club_name: club.club_name,
         club_description: club.club_description,
+        category: club.category,
         status: club.status,
         created_at: club.created_at.toISOString(),
       }));
@@ -104,16 +106,18 @@ export const clubsRouter = createTRPCRouter({
       z.object({
         club_name: z.string().min(1, 'Club name is required'),
         club_description: z.string().min(1, 'Club description is required'),
+        category: z.enum(['subject_oriented_clubs', 'soft_skills_oriented_clubs']).default('subject_oriented_clubs'),
       })
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const { club_name, club_description } = input;
+        const { club_name, club_description, category } = input;
 
         const club = await prisma.club.create({
           data: {
             club_name,
             club_description,
+            category: category as any,
             status: 'active',
             created_by: ctx.user.auth_user_id,
           },
@@ -123,6 +127,7 @@ export const clubsRouter = createTRPCRouter({
           id: club.id.toString(),
           club_name: club.club_name,
           club_description: club.club_description,
+          category: club.category,
           status: club.status,
         };
       } catch (error: any) {
@@ -143,17 +148,19 @@ export const clubsRouter = createTRPCRouter({
         clubId: z.string(),
         club_name: z.string().min(1, 'Club name is required'),
         club_description: z.string().min(1, 'Club description is required'),
+        category: z.enum(['subject_oriented_clubs', 'soft_skills_oriented_clubs']).default('subject_oriented_clubs'),
       })
     )
     .mutation(async ({ input }) => {
       try {
-        const { clubId, club_name, club_description } = input;
+        const { clubId, club_name, club_description, category } = input;
 
         const club = await prisma.club.update({
           where: { id: BigInt(clubId) },
           data: {
             club_name,
             club_description,
+            category: category as any,
           },
         });
 
@@ -161,6 +168,7 @@ export const clubsRouter = createTRPCRouter({
           id: club.id.toString(),
           club_name: club.club_name,
           club_description: club.club_description,
+          category: club.category,
           status: club.status,
         };
       } catch (error: any) {
