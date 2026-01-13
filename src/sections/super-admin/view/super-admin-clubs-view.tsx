@@ -151,6 +151,7 @@ export function SuperAdminClubsView() {
         id: club.id,
         name: club.club_name,
         description: club.club_description,
+        category: club.category || null,
         members: 0,
         status: club.status === 'terminated' ? 'inactive' : club.status,
       }));
@@ -304,6 +305,7 @@ export function SuperAdminClubsView() {
                 headLabel={[
                   { id: 'name', label: 'Club Name' },
                   { id: 'description', label: 'Description' },
+                  { id: 'category', label: 'Category' },
                   { id: 'members', label: 'Members', align: 'center' },
                   { id: 'status', label: 'Status' },
                   { id: '' },
@@ -312,7 +314,7 @@ export function SuperAdminClubsView() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>

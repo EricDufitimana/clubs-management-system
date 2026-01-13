@@ -15,6 +15,7 @@ import { DashboardContent } from '@/layouts/dashboard';
 import { useTRPC } from '@/trpc/client';
 
 import { Iconify } from '@/components/iconify';
+import Link from 'next/link';
 
 import { AnalyticsWidgetSummary } from '@/sections/overview/analytics-widget-summary';
 import { AnalyticsWebsiteVisits } from '@/sections/overview/analytics-website-visits';
@@ -191,6 +192,31 @@ export function SuperAdminReportsView() {
           />
         </Grid>
 
+        {/* Multiple Clubs Report Card */}
+        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+          <Card sx={{ p: 3, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <Box sx={{ mb: 2 }}>
+              <Iconify icon="mingcute:group-2-line" width={64} height={64} color="warning.main" />
+            </Box>
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Students in Multiple Clubs
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              View students enrolled in more than one club
+            </Typography>
+            <Button
+              component={Link}
+              href="/dashboard/super-admin/reports/multiple-clubs"
+              variant="contained"
+              fullWidth
+            >
+              View Report
+            </Button>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3}>
         {/* Monthly attendance trends */}
         <Grid size={{ xs: 12, md: 7 }}>
           <AnalyticsWebsiteVisits
