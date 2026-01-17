@@ -11,6 +11,10 @@ import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useTheme } from '@mui/material/styles';
+
+import { varAlpha } from 'minimal-shared/utils';
+import { SvgColor } from '@/components/svg-color';
 
 import { DashboardContent } from '@/layouts/dashboard';
 import { useTRPC } from '@/trpc/client';
@@ -75,6 +79,7 @@ type ReportsResponse = {
 // ----------------------------------------------------------------------
 
 export function SuperAdminReportsView() {
+  const theme = useTheme();
   const trpc = useTRPC();
   const { data, isLoading, isError } = useQuery(trpc.dashboard.getSuperAdminReports.queryOptions());
 
@@ -142,11 +147,22 @@ export function SuperAdminReportsView() {
 
   return (
     <DashboardContent maxWidth="xl">
-      <Box sx={{ mb: { xs: 3, md: 5 } }}>
-        <Typography variant="h4">Reports & Analytics</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          High-level insights into club performance across the platform.
-        </Typography>
+      <Box sx={{ mb: { xs: 3, md: 5 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography variant="h4">Reports & Analytics</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            High-level insights into club performance across the platform.
+          </Typography>
+        </Box>
+        <Button
+          component={Link}
+          href="/dashboard/super-admin/reports/multiple-clubs"
+          variant="contained"
+          color="inherit"
+          startIcon={<Iconify icon="mingcute:group-2-line" />}
+        >
+          Multiple Clubs Report
+        </Button>
       </Box>
 
       <Grid container spacing={3}>
@@ -193,28 +209,7 @@ export function SuperAdminReportsView() {
           />
         </Grid>
 
-        {/* Multiple Clubs Report Card */}
-        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-          <Card sx={{ p: 3, textAlign: 'center', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <Box sx={{ mb: 2 }}>
-              <Iconify icon="mingcute:group-2-line" width={64} height={64} color="warning.main" />
-            </Box>
-            <Typography variant="h6" sx={{ mb: 1 }}>
-              Students in Multiple Clubs
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              View students enrolled in more than one club
-            </Typography>
-            <Button
-              component={Link}
-              href="/dashboard/super-admin/reports/multiple-clubs"
-              variant="contained"
-              fullWidth
-            >
-              View Report
-            </Button>
-          </Card>
-        </Grid>
+
       </Grid>
 
       <Grid container spacing={3}>

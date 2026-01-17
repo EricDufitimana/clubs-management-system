@@ -258,7 +258,7 @@ export function MultipleClubsReportView() {
                         <Chip 
                             label={student.clubCount} 
                             color="error" 
-                            variant="soft"
+                            variant="filled"
                             sx={{ fontWeight: 'bold' }}
                         />
                       </TableCell>
