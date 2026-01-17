@@ -105,6 +105,9 @@ export function DashboardLayout({
             </Box>
           )}
 
+          {/** @slot Theme Toggle */}
+          <ThemeToggle />
+
           {/** @slot Account drawer */}
           <AccountPopover data={_account} />
         </Box>

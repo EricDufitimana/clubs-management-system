@@ -154,6 +154,12 @@ export function SessionsView() {
     });
   }, [formData, currentUserClubId, createSessionMutation]);
 
+  const handleDeleteSession = useCallback((sessionId: string) => {
+    if (window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+      deleteSessionMutation.mutate({ sessionId });
+    }
+  }, [deleteSessionMutation]);
+
   const handleCloseSnackbar = useCallback(() => {
     setSnackbar((prev) => ({ ...prev, open: false }));
   }, []);
@@ -304,11 +310,28 @@ export function SessionsView() {
                                 >
                                   <Iconify icon="solar:pen-bold" width={18} />
                                 </IconButton>
-                                <Iconify
+
+                                {/* <Iconify
                                   icon="solar:calendar-mark-bold-duotone"
                                   width={24}
                                   sx={{ color: `${color}.main` }}
-                                />
+                                /> */}
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteSession(session.id);
+                                  }}
+                                  sx={{ 
+                                    color: 'error.main',
+                                    '&:hover': {
+                                      bgcolor: alpha(theme.palette.error.main, 0.08),
+                                    },
+                                  }}
+                                  disabled={deleteSessionMutation.isPending}
+                                >
+                                  <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                                </IconButton>
                               </Box>
                             </Box>
 

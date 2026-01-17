@@ -154,7 +154,7 @@ export function ClubsView() {
         name: club.club_name,
         description: club.club_description,
         category: club.category,
-        members: 0, // TODO: Add members count when available
+        members: club.member_count || 0,
         status: club.status === 'terminated' ? 'inactive' : club.status,
       }));
       setClubs(mappedClubs);

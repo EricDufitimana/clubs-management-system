@@ -25,7 +25,7 @@ function Solutions() {
               {...bottomAnimation}
               className='flex flex-col gap-6 items-center md:max-w-3xl mx-auto'>
               <div className='flex flex-col gap-3 items-center text-center'>
-                <h2 className='text-3xl md:text-5xl dark:text-dark_black'>
+                <h2 className='text-3xl md:text-5xl text-dark_black dark:!text-dark_black'>
                   <TextGenerateEffect words="Paper? Nah. We Got " />
                   <TextGenerateEffect
                     words="This."
@@ -33,7 +33,7 @@ function Solutions() {
                     className="italic font-normal instrument-font"
                   />
                 </h2>
-                <p className='dark:text-dark_black'>
+                <p className='text-dark_black dark:!text-dark_black'>
                 From attendance to reports, our platform gives you everything you need to manage your clubs smoothly, efficiently, and with zero drama.
                 </p>
               </div>

@@ -203,15 +203,16 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
 
   // Get unique sessions for filter dropdown
   const sessionOptions = useMemo(() => {
+    // Use sessions data instead of attendance records to ensure we only show sessions from selected club
     const uniqueSessions = Array.from(
-      new Map(attendanceRecords.map(r => [r.session_id, { id: r.session_id, name: r.session_name, date: r.session_date }])).values()
+      new Map(sessions.map(s => [s.id, { id: s.id, name: `${s.notes} - ${fDate(s.date, 'DD MMM YYYY')}`, date: s.date }])).values()
     ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     return [
       { id: 'all', name: 'All Sessions' },
       ...uniqueSessions,
     ];
-  }, [attendanceRecords]);
+  }, [sessions]);
 
   const handleChangePage = useCallback((_: unknown, newPage: number) => {
     setPage(newPage);

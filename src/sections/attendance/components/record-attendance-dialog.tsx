@@ -28,6 +28,7 @@ import { Iconify } from '@/components/iconify';
 import { useTRPC } from '@/trpc/client';
 
 import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/member/utils/colors';
+import { useClubContext } from '@/contexts/club-context';
 
 // ----------------------------------------------------------------------
 
@@ -70,6 +71,7 @@ export function RecordAttendanceDialog({
   const theme = useTheme();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { selectedClub } = useClubContext();
   
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
@@ -84,10 +86,10 @@ export function RecordAttendanceDialog({
     severity: 'success'
   });
 
-  // Fetch sessions without attendance using tRPC
+  // Fetch sessions without attendance using tRPC - filtered by selected club
   const sessionsQuery = useQuery({
-    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions(),
-    enabled: open,
+    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions({ clubId: selectedClub?.id }),
+    enabled: open && !!selectedClub?.id,
   });
   
   const loadingSessions = sessionsQuery.isLoading;
@@ -215,26 +217,75 @@ export function RecordAttendanceDialog({
         <Stack spacing={3} sx={{ pt: 2 }}>
           {/* Session Selection */}
           <Box>
-            <TextField
-              select
-              fullWidth
-              label="Select Session"
-              value={selectedSessionId}
-              onChange={(e) => handleSessionChange(e.target.value)}
-              disabled={loadingSessions}
-              SelectProps={{
-                displayEmpty: true,
-                open: isSelectOpen,
-                onOpen: () => setIsSelectOpen(true),
-                onClose: () => setIsSelectOpen(false),
-                renderValue: (selected) => {
-                  if (!selected || loadingSessions) {
-                    return null; // Hide placeholder when closed
-                  }
-                  const session = sessions.find(s => s.id === selected);
-                  if (!session) return null;
-                  
-                  return (
+            {loadingSessions ? (
+              <TextField
+                select
+                fullWidth
+                label="Select Session"
+                value=""
+                disabled
+                SelectProps={{
+                  displayEmpty: true,
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} />
+                    </InputAdornment>
+                  ),
+                }}
+              >
+                <MenuItem value="">
+                  <em>Loading sessions...</em>
+                </MenuItem>
+              </TextField>
+            ) : sessions.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Iconify icon="solar:calendar-mark-bold-duotone" width={48} sx={{ color: 'text.disabled', mb: 2 }} />
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                  No sessions available
+                </Typography>
+                <Typography variant="body2" color="text.disabled">
+                  Create a session first before recording attendance
+                </Typography>
+              </Box>
+            ) : (
+              <TextField
+                select
+                fullWidth
+                label="Select Session"
+                value={selectedSessionId}
+                onChange={(e) => handleSessionChange(e.target.value)}
+                SelectProps={{
+                  displayEmpty: true,
+                  open: isSelectOpen,
+                  onOpen: () => setIsSelectOpen(true),
+                  onClose: () => setIsSelectOpen(false),
+                  renderValue: (selected) => {
+                    if (!selected) {
+                      return null; // Hide placeholder when closed
+                    }
+                    const session = sessions.find(s => s.id === selected);
+                    if (!session) return null;
+                    
+                    return (
+                      <Box>
+                        <Typography variant="body2">
+                          {fDate(session.date, 'DD MMM YYYY')} - {fDate(session.date, 'HH:mm')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {session.club_name} - {session.notes}
+                        </Typography>
+                      </Box>
+                    );
+                  },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Choose session</em>
+                </MenuItem>
+                {sessions.map((session) => (
+                  <MenuItem key={session.id} value={session.id}>
                     <Box>
                       <Typography variant="body2">
                         {fDate(session.date, 'DD MMM YYYY')} - {fDate(session.date, 'HH:mm')}
@@ -242,34 +293,11 @@ export function RecordAttendanceDialog({
                       <Typography variant="caption" color="text.secondary">
                         {session.club_name} - {session.notes}
                       </Typography>
-                    </Box>
-                  );
-                },
-              }}
-              InputProps={{
-                endAdornment: loadingSessions ? (
-                  <InputAdornment position="end">
-                    <CircularProgress size={20} />
-                  </InputAdornment>
-                ) : undefined,
-              }}
-            >
-              <MenuItem value="" disabled={loadingSessions}>
-                <em>Choose session</em>
-              </MenuItem>
-              {sessions.map((session) => (
-                <MenuItem key={session.id} value={session.id}>
-                  <Box>
-                    <Typography variant="body2">
-                      {fDate(session.date, 'DD MMM YYYY')} - {fDate(session.date, 'HH:mm')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {session.club_name} - {session.notes}
-                    </Typography>
-                  </Box>
-                </MenuItem>
-              ))}
-            </TextField>
+                      </Box>
+                    </MenuItem>
+                ))}
+              </TextField>
+            )}
           
           </Box>
 

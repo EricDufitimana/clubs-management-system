@@ -19,19 +19,8 @@ export type ThemeProviderProps = Partial<MuiThemeProviderProps> & {
 };
 
 export function ThemeProvider({ themeOverrides, children, ...other }: ThemeProviderProps) {
-  // Only light theme - dark mode completely removed
   const theme = createTheme({
-    themeOverrides: {
-      ...themeOverrides,
-      colorSchemes: {
-        light: {
-          palette: {
-            mode: 'light' as const,
-          },
-        },
-      },
-      defaultColorScheme: 'light',
-    },
+    themeOverrides,
   });
 
   return (

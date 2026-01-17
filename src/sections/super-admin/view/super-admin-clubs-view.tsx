@@ -152,7 +152,7 @@ export function SuperAdminClubsView() {
         name: club.club_name,
         description: club.club_description,
         category: club.category || null,
-        members: 0,
+        members: club.member_count || 0,
         status: club.status === 'terminated' ? 'inactive' : club.status,
       }));
       setClubs(mappedClubs);

@@ -39,6 +39,7 @@ export const authRouter = createTRPCRouter({
                         id: true,
                         first_name: true,
                         last_name: true,
+                        avatar_url: true,
                     },
                 });
 
@@ -48,7 +49,7 @@ export const authRouter = createTRPCRouter({
                         email: authUser.email || null,
                         first_name: dbUser.first_name,
                         last_name: dbUser.last_name,
-                        avatarUrl: `/assets/images/avatar/avatar-${(Number(dbUser.id) % 24) + 1}.webp`,
+                        avatarUrl: dbUser.avatar_url || `/assets/images/avatar/avatar-${(Number(dbUser.id) % 24) + 1}.webp`,
                     };
                 }
             }
@@ -266,9 +267,45 @@ export const authRouter = createTRPCRouter({
                 }
                 throw new TRPCError({
                     code: "INTERNAL_SERVER_ERROR",
-                    message: "Failed to sign up",
                 });
             }
         }),
-})
+
+    updateUserAvatar: baseProcedure
+        .input(z.object({
+            avatarUrl: z.string(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const supabase = await createClient();
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                throw new TRPCError({
+                    code: 'UNAUTHORIZED',
+                    message: 'Not authenticated',
+                });
+            }
+
+            try {
+                // Update in database if exists
+                await prisma.user.update({
+                    where: { auth_user_id: user.id },
+                    data: { avatar_url: input.avatarUrl },
+                });
+
+                // Update in supabase metadata as fallback/cache
+                await supabase.auth.updateUser({
+                    data: { avatar_url: input.avatarUrl }
+                });
+
+                return { success: true };
+            } catch (error) {
+                console.error('[AUTH] Update avatar error:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to update avatar',
+                });
+            }
+        }),
+});
 

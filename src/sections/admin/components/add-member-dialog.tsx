@@ -200,8 +200,11 @@ export function AddMemberDialog({ open, onClose, onAdd, onError, clubId, preload
     }
   }, [addMembersMutation.isPending, onClose]);
 
-  // Filter students based on search query
+  // Filter students based on search query and exclude Senior 6
   const filteredStudents = students.filter(student => {
+    // Exclude Senior 6 students
+    if (student.grade === 'Senior6') return false;
+    
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     const fullName = `${student.first_name} ${student.last_name}`.toLowerCase();

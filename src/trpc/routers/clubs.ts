@@ -35,6 +35,16 @@ export const clubsRouter = createTRPCRouter({
         orderBy: {
           created_at: 'desc',
         },
+        include: {
+          members: {
+            where: {
+              membership_status: 'active',
+            },
+            select: {
+              id: true,
+            },
+          },
+        },
       });
 
       return clubs.map((club) => ({
@@ -43,6 +53,7 @@ export const clubsRouter = createTRPCRouter({
         club_description: club.club_description,
         category: club.category,
         status: club.status,
+        member_count: club.members.length,
         created_at: club.created_at.toISOString(),
       }));
     } catch (error: any) {
@@ -385,6 +396,27 @@ export const clubsRouter = createTRPCRouter({
           });
         }
 
+        // Check for Senior 6 students and exclude them
+        const senior6Students = await prisma.student.findMany({
+          where: {
+            id: { in: newStudentIds.map(id => BigInt(id)) },
+            grade: 'Senior6',
+          },
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+          },
+        });
+
+        if (senior6Students.length > 0) {
+          const senior6Names = senior6Students.map(s => `${s.first_name} ${s.last_name}`).join(', ');
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Cannot add Senior 6 students to clubs: ${senior6Names}. Senior 6 students are not allowed to join clubs.`,
+          });
+        }
+
         // Get target club details to check category
         const targetClub = await prisma.club.findUnique({
           where: { id: targetClubId },
@@ -397,53 +429,56 @@ export const clubsRouter = createTRPCRouter({
             message: 'Target club not found',
           });
         }
-
-        // Check club membership restrictions for each new student
-        const studentClubRestrictions = await prisma.$queryRaw<Array<{
-          student_id: bigint;
-          existing_clubs_count: number;
-          subject_oriented_count: number;
-          soft_skills_oriented_count: number;
-        }>>`
-          SELECT 
-            cm.student_id,
-            COUNT(cm.club_id) as existing_clubs_count,
-            COUNT(CASE WHEN c.category = 'subject_oriented_clubs' THEN 1 END) as subject_oriented_count,
-            COUNT(CASE WHEN c.category = 'soft_skills_oriented_clubs' THEN 1 END) as soft_skills_oriented_count
-          FROM club-members cm
-          JOIN clubs c ON cm.club_id = c.id
-          WHERE cm.student_id IN (${newStudentIds.map(id => BigInt(id)).join(',')})
-            AND cm.membership_status = 'active'
-          GROUP BY cm.student_id
-        `;
+      const studentClubRestrictions = await prisma.$queryRaw<Array<{
+        student_id: bigint;
+        existing_clubs_count: bigint;
+        subject_oriented_count: bigint;
+        soft_skills_oriented_count: bigint;
+      }>>`
+        SELECT 
+          cm.student_id,
+          COUNT(cm.club_id) as existing_clubs_count,
+          COUNT(CASE WHEN c.category = 'subject_oriented_clubs' THEN 1 END) as subject_oriented_count,
+          COUNT(CASE WHEN c.category = 'soft_skills_oriented_clubs' THEN 1 END) as soft_skills_oriented_count
+        FROM "club-members" cm
+        JOIN clubs c ON cm.club_id = c.id
+        WHERE cm.student_id = ANY(${newStudentIds.map(id => BigInt(id))})
+          AND cm.membership_status = 'active'
+        GROUP BY cm.student_id
+      `;
 
         const restrictedStudents: string[] = [];
         
-        for (const student of newStudentIds) {
-          const restriction = studentClubRestrictions.find(r => r.student_id.toString() === student);
+      for (const student of newStudentIds) {
+        const restriction = studentClubRestrictions.find(r => r.student_id.toString() === student);
+        
+        if (restriction) {
+          const targetCategory = targetClub.category;
           
-          if (restriction) {
-            const targetCategory = targetClub.category;
-            
-            // If student already has 2 clubs, restrict
-            if (restriction.existing_clubs_count >= 2) {
-              restrictedStudents.push(student);
-              continue;
-            }
-            
-            // If target club is subject oriented and student already has one, restrict
-            if (targetCategory === 'subject_oriented_clubs' && restriction.subject_oriented_count >= 1) {
-              restrictedStudents.push(student);
-              continue;
-            }
-            
-            // If target club is soft skills oriented and student already has one, restrict
-            if (targetCategory === 'soft_skills_oriented_clubs' && restriction.soft_skills_oriented_count >= 1) {
-              restrictedStudents.push(student);
-              continue;
-            }
+          // Convert bigint to number for comparison
+          const existingCount = Number(restriction.existing_clubs_count);
+          const subjectCount = Number(restriction.subject_oriented_count);
+          const softSkillsCount = Number(restriction.soft_skills_oriented_count);
+          
+          // If student already has 2 clubs, restrict
+          if (existingCount >= 2) {
+            restrictedStudents.push(student);
+            continue;
+          }
+          
+          // If target club is subject oriented and student already has one, restrict
+          if (targetCategory === 'subject_oriented_clubs' && subjectCount >= 1) {
+            restrictedStudents.push(student);
+            continue;
+          }
+          
+          // If target club is soft skills oriented and student already has one, restrict
+          if (targetCategory === 'soft_skills_oriented_clubs' && softSkillsCount >= 1) {
+            restrictedStudents.push(student);
+            continue;
           }
         }
+      }
 
         if (restrictedStudents.length > 0) {
           throw new TRPCError({
@@ -497,13 +532,13 @@ export const clubsRouter = createTRPCRouter({
         grade: string;
         combination: string;
         gender: string;
-        club_count: number;
+        club_count: bigint;
         clubs: Array<{
           club_id: bigint;
           club_name: string;
           club_category: string;
           membership_status: string;
-          joined_at: Date;
+          joined_at: string; // Changed from Date to string
         }>;
       }>>`
         SELECT 
@@ -523,27 +558,30 @@ export const clubsRouter = createTRPCRouter({
             ) ORDER BY cm.joined_at DESC
           ) as clubs
         FROM students s
-        JOIN club-members cm ON s.id = cm.student_id
+        JOIN "club-members" cm ON s.id = cm.student_id
         JOIN clubs c ON cm.club_id = c.id
         WHERE cm.membership_status = 'active'
         GROUP BY s.id, s.first_name, s.last_name, s.grade, s.combination, s.gender
-        HAVING COUNT(cm.club_id) > 1
+        HAVING 
+          COUNT(CASE WHEN c.category = 'subject_oriented_clubs' THEN 1 END) > 1 
+          OR 
+          COUNT(CASE WHEN c.category = 'soft_skills_oriented_clubs' THEN 1 END) > 1
         ORDER BY student_name ASC
       `;
-
+      
       return studentsInMultipleClubs.map(student => ({
         studentId: student.student_id.toString(),
         studentName: student.student_name,
         grade: student.grade,
         combination: student.combination,
         gender: student.gender,
-        clubCount: student.club_count,
+        clubCount: Number(student.club_count),
         clubs: student.clubs.map(club => ({
           clubId: club.club_id.toString(),
           clubName: club.club_name,
           clubCategory: club.club_category,
           membershipStatus: club.membership_status,
-          joinedAt: club.joined_at.toISOString(),
+          joinedAt: club.joined_at, // Just use the string directly
         })),
       }));
     } catch (error: any) {

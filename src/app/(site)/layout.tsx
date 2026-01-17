@@ -7,10 +7,12 @@ import ScrollToTop from '@/components/scroll-to-top';
 // ----------------------------------------------------------------------
 
 export default function DashboardLayoutWrapper({ children }: { children: React.ReactNode }) {
-  return <>
-  <Header />
-  {children}
-  <Footer />
-  <ScrollToTop />
-  </>;
+  return (
+    <>
+      <Header />
+      {children}
+      <Footer />
+      <ScrollToTop />
+    </>
+  );
 }

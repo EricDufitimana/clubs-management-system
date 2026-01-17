@@ -36,6 +36,7 @@ model User {
   last_name    String   @db.Text
   role         UserRole
   created_at   DateTime @default(now()) @db.Timestamptz
+  avatar_url   String?  @map("avatar_url") @db.Text
 
   clubLeaders ClubLeader[]
 
@@ -78,6 +79,11 @@ enum Combination {
   MathematicsComputerScienceEconomics           @map("Mathematics-Computer Science-Economics")
   PhysicsChemistryBiology                       @map("Physics-Chemistry-Biology")
   HistoryGeographyLiterature                    @map("History-Geography-Literature")
+  EyFalcon                                      @map("EY-Falcon")
+  EyDove                                        @map("EY-Dove")
+  EyEagle                                       @map("EY-Eagle")
+  EySparrow                                     @map("EY-Sparrow")
+
 
   @@map("combination")
 }

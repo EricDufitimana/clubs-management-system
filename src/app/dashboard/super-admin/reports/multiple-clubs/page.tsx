@@ -45,18 +45,49 @@ type StudentInMultipleClubs = {
   }>;
 };
 
+// ... (keeping existing imports)
+import TextField from '@mui/material/TextField';
+import InputAdornment from '@mui/material/InputAdornment';
+import TablePagination from '@mui/material/TablePagination';
+import Stack from '@mui/material/Stack';
+
+// ... (existing helper functions)
+
 export function MultipleClubsReportView() {
   const trpc = useTRPC();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [filterName, setFilterName] = useState('');
+  
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
     message: '',
     severity: 'success'
   });
 
-  // Fetch students in multiple clubs
   const { data: studentsData, isLoading, error } = useQuery({
     ...trpc.clubs.getStudentsInMultipleClubs.queryOptions(),
   });
+
+  // Client-side filtering and pagination
+  const filteredData = (studentsData || []).filter((student) => 
+    student.studentName.toLowerCase().includes(filterName.toLowerCase()) ||
+    student.studentId.toLowerCase().includes(filterName.toLowerCase())
+  );
+
+  const paginatedData = filteredData.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
+
+  const handleChangePage = (event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
   const handleExportToExcel = useCallback(() => {
     if (!studentsData) return;
@@ -152,20 +183,10 @@ export function MultipleClubsReportView() {
 
   return (
     <DashboardContent>
-      <Box
-        sx={{
-          mb: 5,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <Typography variant="h4">
-          Students in Multiple Clubs Report
-        </Typography>
+      <Box sx={{ mb: 5, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Typography variant="h4">Students in Multiple Clubs</Typography>
         <Button
           variant="contained"
-          color="inherit"
           startIcon={<Iconify icon="mingcute:download-2-line" />}
           onClick={handleExportToExcel}
           disabled={!studentsData || studentsData.length === 0}
@@ -175,102 +196,86 @@ export function MultipleClubsReportView() {
       </Box>
 
       <Card>
+        <Box sx={{ p: 2.5, display: 'flex', alignItems: 'center' }}>
+            <TextField
+                placeholder="Search student..."
+                value={filterName}
+                onChange={(e) => {
+                    setFilterName(e.target.value);
+                    setPage(0);
+                }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                        </InputAdornment>
+                    ),
+                }}
+                sx={{ width: 320 }}
+            />
+        </Box>
+
         <Scrollbar>
-          <TableContainer component={Paper} sx={{ overflow: 'unset' }}>
-            <Table sx={{ minWidth: 800 }}>
+          <TableContainer sx={{ overflow: 'unset' }}>
+            <Table sx={{ minWidth: 960 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>Student Name</TableCell>
-                  <TableCell>Grade</TableCell>
-                  <TableCell>Combination</TableCell>
-                  <TableCell>Gender</TableCell>
-                  <TableCell align="center">Number of Clubs</TableCell>
-                  <TableCell>Club Details</TableCell>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Grade/Comb.</TableCell>
+                  <TableCell align="center">Clubs Count</TableCell>
+                  <TableCell>Club Memberships</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <CircularProgress />
-                    </TableCell>
+                    <TableCell colSpan={4} align="center"><CircularProgress /></TableCell>
                   </TableRow>
                 ) : error ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <Alert severity="error">
-                        Failed to load data. Please try again.
-                      </Alert>
-                    </TableCell>
-                  </TableRow>
-                ) : !studentsData || studentsData.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      <Typography variant="body2" sx={{ py: 3 }}>
-                        No students found in multiple clubs.
-                      </Typography>
-                    </TableCell>
-                  </TableRow>
+                   <TableRow>
+                    <TableCell colSpan={4} align="center"><Alert severity="error">Failed to load</Alert></TableCell>
+                   </TableRow>
+                ) : filteredData.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={4} align="center">No data found</TableCell>
+                    </TableRow>
                 ) : (
-                  studentsData.map((student) => (
-                    <TableRow key={student.studentId}>
-                      <TableCell component="th" scope="row">
-                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                          {student.studentName}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          ID: {student.studentId}
-                        </Typography>
+                  paginatedData.map((student) => (
+                    <TableRow key={student.studentId} hover>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="subtitle2">{student.studentName}</Typography>
+                            <Chip label={student.gender} size="small" variant="outlined" sx={{ mt: 1, width: 'fit-content', height: 20, fontSize: '0.7rem' }} />
+                        </Box>
                       </TableCell>
-                      <TableCell>{student.grade || 'null'}</TableCell>
-                      <TableCell>{student.combination || 'null'}</TableCell>
-                      <TableCell>{student.gender}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+                            <Typography variant="body2">{student.grade || '-'}</Typography>
+                            <Typography variant="caption" color="text.secondary">{student.combination || '-'}</Typography>
+                        </Box>
+                      </TableCell>
                       <TableCell align="center">
                         <Chip 
-                          label={student.clubCount} 
-                          color={student.clubCount > 2 ? 'error' : 'warning'}
-                          size="small"
+                            label={student.clubCount} 
+                            color="error" 
+                            variant="soft"
+                            sx={{ fontWeight: 'bold' }}
                         />
                       </TableCell>
                       <TableCell>
-                        <Accordion>
-                          <AccordionSummary expandIcon={<Iconify icon="mingcute:arrow-down-line" />}>
-                            <Typography variant="body2">
-                              View {student.clubCount} club(s)
-                            </Typography>
-                          </AccordionSummary>
-                          <AccordionDetails>
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                              {student.clubs.map((club, index) => (
-                                <Box key={club.clubId} sx={{ 
-                                  p: 1, 
-                                  border: '1px solid', 
-                                  borderColor: 'divider',
-                                  borderRadius: 1 
-                                }}>
-                                  <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-                                    {club.clubName}
-                                  </Typography>
-                                  <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 0.5 }}>
-                                    <Chip
-                                      label={getCategoryLabel(club.clubCategory)}
-                                      color={getCategoryColor(club.clubCategory)}
-                                      size="small"
-                                    />
-                                    <Chip
-                                      label={club.membershipStatus}
-                                      color={club.membershipStatus === 'active' ? 'success' : 'default'}
-                                      size="small"
-                                    />
-                                  </Box>
-                                  <Typography variant="caption" color="text.secondary">
-                                    Joined: {new Date(club.joinedAt).toLocaleDateString()}
-                                  </Typography>
+                        <Stack spacing={1}>
+                            {student.clubs.map((club) => (
+                                <Box key={club.clubId} sx={{ p: 1, borderRadius: 1, bgcolor: 'background.neutral', border: '1px dashed', borderColor: 'divider' }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                                        <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>{club.clubName}</Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{new Date(club.joinedAt).toLocaleDateString()}</Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        <Chip label={getCategoryLabel(club.clubCategory)} color={getCategoryColor(club.clubCategory)} size="small" sx={{ height: 20, fontSize: '0.7rem' }} />
+                                    </Box>
                                 </Box>
-                              ))}
-                            </Box>
-                          </AccordionDetails>
-                        </Accordion>
+                            ))}
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   ))
@@ -279,6 +284,16 @@ export function MultipleClubsReportView() {
             </Table>
           </TableContainer>
         </Scrollbar>
+
+        <TablePagination
+            component="div"
+            count={filteredData.length}
+            page={page}
+            onPageChange={handleChangePage}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={[5, 10, 25]}
+        />
       </Card>
 
       <Snackbar
