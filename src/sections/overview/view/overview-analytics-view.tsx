@@ -117,7 +117,7 @@ export function OverviewAnalyticsView() {
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <AnalyticsWidgetSummary
-            title="Total Users"
+            title="Total Members"
             percent={calculatePercentChange(stats.totalUsers, stats.trends.users)}
             total={stats.totalUsers}
             icon={<Iconify icon="solar:users-group-rounded-bold-duotone" width={48} />}

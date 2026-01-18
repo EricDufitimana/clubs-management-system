@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -64,6 +65,7 @@ export function BulkImportDialog({
   onError, 
   clubId 
 }: BulkImportDialogProps) {
+  const theme = useTheme();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
@@ -186,16 +188,24 @@ export function BulkImportDialog({
             {/* File Upload Area */}
             <Box
               sx={{
-                border: `2px dashed ${dragActive ? 'primary.main' : 'grey.300'}`,
+                border: `2px dashed ${dragActive ? theme.palette.primary.main : alpha(theme.palette.divider, 0.8)}`,
                 borderRadius: 2,
                 p: 4,
                 textAlign: 'center',
-                backgroundColor: dragActive ? 'primary.50' : 'grey.50',
+                backgroundColor: dragActive 
+                  ? alpha(theme.palette.primary.main, 0.04)
+                  : theme.palette.mode === 'dark' 
+                    ? alpha(theme.palette.background.paper, 0.5)
+                    : alpha(theme.palette.grey[50], 0.8),
                 cursor: 'pointer',
                 transition: 'all 0.2s ease-in-out',
                 '&:hover': {
-                  backgroundColor: 'primary.100',
-                  borderColor: 'primary.main',
+                  backgroundColor: dragActive 
+                    ? alpha(theme.palette.primary.main, 0.08)
+                    : theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.background.paper, 0.8)
+                      : alpha(theme.palette.primary.main, 0.04),
+                  borderColor: theme.palette.primary.main,
                 },
               }}
               onDragEnter={handleDrag}

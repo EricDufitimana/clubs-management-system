@@ -200,6 +200,25 @@ export async function POST(request: NextRequest) {
     });
     console.log(`[BULK_IMPORT] Retrieved ${allStudents.length} students from database`);
 
+    // Helper function to normalize names
+    const normalizeName = (name: string): string => {
+      return name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z\s]/g, '') // Remove non-alphabetic characters except spaces
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .trim();
+    };
+
+    // Helper function to capitalize name properly
+    const capitalizeName = (name: string): string => {
+      return name
+        .toLowerCase()
+        .split(' ')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
+
     // 9. Match extracted names with student records
     console.log('[BULK_IMPORT] Step 9: Matching extracted names with student records');
     const matchedStudents = [];
@@ -207,7 +226,7 @@ export async function POST(request: NextRequest) {
     console.log(`[BULK_IMPORT] Starting matching process for ${extractedNames.length} names`);
 
     for (const extractedName of extractedNames) {
-      const cleanName = extractedName.trim().toLowerCase();
+      const cleanName = normalizeName(extractedName);
       const nameParts = cleanName.split(' ').filter((part: string) => part.length > 0);
       console.log(`[BULK_IMPORT] Processing name: "${extractedName}" -> "${cleanName}" (${nameParts.length} parts)`);
       
@@ -219,42 +238,57 @@ export async function POST(request: NextRequest) {
       const possibleFirstNames = [nameParts[0]];
       const possibleLastNames = [nameParts[nameParts.length - 1]];
       
-      // Handle reversed names
+      // Handle reversed names (try all combinations for 2-part names)
       if (nameParts.length === 2) {
         possibleFirstNames.push(nameParts[1]);
         possibleLastNames.push(nameParts[0]);
+      } else if (nameParts.length > 2) {
+        // For names with more than 2 parts, try middle names as first name
+        for (let i = 1; i < nameParts.length - 1; i++) {
+          possibleFirstNames.push(nameParts[i]);
+        }
       }
 
       let bestMatch = null;
       let bestScore = 0;
 
       for (const student of allStudents) {
+        // Skip Senior 6 students
+        if (student.grade === 'Senior6') {
+          continue;
+        }
+
+        // Normalize student names for comparison
+        const studentFirstName = normalizeName(student.first_name);
+        const studentLastName = normalizeName(student.last_name);
+        const studentFullName = normalizeName(`${student.first_name} ${student.last_name}`);
+        
         let score = 0;
         
-        // Check first name matches
+        // Check first name matches with normalized comparison
         for (const firstName of possibleFirstNames) {
-          if (student.first_name.toLowerCase() === firstName) {
+          if (studentFirstName === firstName) {
             score += 50;
             break;
           }
-          if (student.first_name.toLowerCase().includes(firstName) || firstName.includes(student.first_name.toLowerCase())) {
+          if (studentFirstName.includes(firstName) || firstName.includes(studentFirstName)) {
             score += 25;
           }
         }
 
-        // Check last name matches
+        // Check last name matches with normalized comparison
         for (const lastName of possibleLastNames) {
-          if (student.last_name.toLowerCase() === lastName) {
+          if (studentLastName === lastName) {
             score += 50;
             break;
           }
-          if (student.last_name.toLowerCase().includes(lastName) || lastName.includes(student.last_name.toLowerCase())) {
+          if (studentLastName.includes(lastName) || lastName.includes(studentLastName)) {
             score += 25;
           }
         }
 
         // Bonus for exact full name match
-        if (`${student.first_name} ${student.last_name}`.toLowerCase() === cleanName) {
+        if (studentFullName === cleanName) {
           score = 100;
         }
 
@@ -267,12 +301,12 @@ export async function POST(request: NextRequest) {
       if (bestMatch) {
         matchedStudents.push({
           student: bestMatch,
-          extractedName,
+          extractedName: capitalizeName(extractedName), // Return properly capitalized name
           matchScore: bestScore,
         });
         console.log(`[BULK_IMPORT] ✓ Matched: "${extractedName}" -> ${bestMatch.first_name} ${bestMatch.last_name} (score: ${bestScore})`);
       } else {
-        unmatchedNames.push(extractedName);
+        unmatchedNames.push(capitalizeName(extractedName)); // Return properly capitalized name
         console.log(`[BULK_IMPORT] ✗ Unmatched: "${extractedName}"`);
       }
     }
