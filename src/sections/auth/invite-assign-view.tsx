@@ -74,7 +74,7 @@ export function InviteAssignView({ token }: InviteAssignViewProps) {
       } else if (result.success) {
         // Show success briefly before redirect
         await new Promise(resolve => setTimeout(resolve, 800));
-        router.push('/dashboard/admin');
+        router.push('/');
       }
     } catch (error) {
       setError('Failed to assign club. Please try again.');

@@ -334,18 +334,51 @@ export async function POST(request: NextRequest) {
 
     // 11. Add available students to the club
     console.log('[BULK_IMPORT] Step 11: Adding available students to club');
+    let successfullyAdded: typeof availableStudents = [];
+    let categoryConflicts: typeof availableStudents = [];
+    
     if (availableStudents.length > 0) {
       console.log(`[BULK_IMPORT] Adding ${availableStudents.length} students to club ${clubId}`);
-      await prisma.clubMember.createMany({
-        data: availableStudents.map(m => ({
-          club_id: BigInt(clubId),
-          student_id: m.student.id,
-          membership_status: 'active',
-          joined_at: new Date(),
-        })),
-        skipDuplicates: true,
-      });
-      console.log('[BULK_IMPORT] Successfully added students to club');
+      
+      try {
+        // Try to add all students at once
+        const result = await prisma.clubMember.createMany({
+          data: availableStudents.map(m => ({
+            club_id: BigInt(clubId),
+            student_id: m.student.id,
+            membership_status: 'active',
+            joined_at: new Date(),
+          })),
+          skipDuplicates: true,
+        });
+        successfullyAdded = availableStudents;
+        console.log('[BULK_IMPORT] Successfully added all students to club');
+      } catch (error: any) {
+        console.log('[BULK_IMPORT] Batch insert failed, trying individual inserts');
+        
+        // If batch insert fails, try individual inserts to identify specific conflicts
+        for (const studentData of availableStudents) {
+          try {
+            await prisma.clubMember.create({
+              data: {
+                club_id: BigInt(clubId),
+                student_id: studentData.student.id,
+                membership_status: 'active',
+                joined_at: new Date(),
+              },
+            });
+            successfullyAdded.push(studentData);
+          } catch (individualError: any) {
+            // Check if this is a category constraint error
+            if (individualError.message?.includes('already has a membership in category')) {
+              categoryConflicts.push(studentData);
+              console.log(`[BULK_IMPORT] Category conflict for student ${studentData.student.id}: ${individualError.message}`);
+            } else {
+              console.error(`[BULK_IMPORT] Failed to add student ${studentData.student.id}:`, individualError);
+            }
+          }
+        }
+      }
     } else {
       console.log('[BULK_IMPORT] No new students to add');
     }
@@ -363,17 +396,25 @@ export async function POST(request: NextRequest) {
         totalExtracted: extractedNames.length,
         totalMatched: matchedStudents.length,
         availableToAdd: availableStudents.length,
+        successfullyAdded: successfullyAdded.length,
         alreadyMembers: conflictStudents.length,
+        categoryConflicts: categoryConflicts.length,
         unmatched: unmatchedNames.length,
       },
       results: {
-        added: availableStudents.map(m => ({
+        added: successfullyAdded.map(m => ({
           studentId: m.student.id.toString(),
           name: `${m.student.first_name} ${m.student.last_name}`,
           extractedName: m.extractedName,
           matchScore: m.matchScore,
         })),
         conflicts: conflictStudents.map(m => ({
+          studentId: m.student.id.toString(),
+          name: `${m.student.first_name} ${m.student.last_name}`,
+          extractedName: m.extractedName,
+          matchScore: m.matchScore,
+        })),
+        categoryConflicts: categoryConflicts.map(m => ({
           studentId: m.student.id.toString(),
           name: `${m.student.first_name} ${m.student.last_name}`,
           extractedName: m.extractedName,

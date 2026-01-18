@@ -38,7 +38,9 @@ interface ImportResult {
     totalExtracted: number;
     totalMatched: number;
     availableToAdd: number;
+    successfullyAdded: number;
     alreadyMembers: number;
+    categoryConflicts: number;
     unmatched: number;
   };
   results: {
@@ -49,6 +51,12 @@ interface ImportResult {
       matchScore: number;
     }>;
     conflicts: Array<{
+      studentId: string;
+      name: string;
+      extractedName: string;
+      matchScore: number;
+    }>;
+    categoryConflicts: Array<{
       studentId: string;
       name: string;
       extractedName: string;
@@ -101,9 +109,13 @@ export function BulkImportDialog({
         queryKey: trpc.users.getUsersByClub.queryKey({ clubId: clubId || undefined }),
       });
 
-      const message = `Successfully imported ${data.summary.availableToAdd} members! ${
+      const message = `Successfully imported ${data.summary.successfullyAdded} members! ${
         data.summary.alreadyMembers > 0 
           ? `${data.summary.alreadyMembers} were already members.` 
+          : ''
+      } ${
+        data.summary.categoryConflicts > 0 
+          ? `${data.summary.categoryConflicts} are already members of a club in the same category.` 
           : ''
       } ${
         data.summary.unmatched > 0 
@@ -304,13 +316,18 @@ export function BulkImportDialog({
                       size="small"
                     />
                     <Chip 
-                      label={`Added: ${importResult.summary.availableToAdd}`}
+                      label={`Added: ${importResult.summary.successfullyAdded}`}
                       color="success"
                       size="small"
                     />
                     <Chip 
                       label={`Already Members: ${importResult.summary.alreadyMembers}`}
                       color="warning"
+                      size="small"
+                    />
+                    <Chip 
+                      label={`Category Conflicts: ${importResult.summary.categoryConflicts}`}
+                      color="error"
                       size="small"
                     />
                     <Chip 
@@ -366,6 +383,35 @@ export function BulkImportDialog({
                         <ListItem>
                           <ListItemText
                             primary={`... and ${importResult.results.conflicts.length - 3} more`}
+                          />
+                        </ListItem>
+                      )}
+                    </List>
+                  </Box>
+                )}
+
+                {/* Category Conflicts */}
+                {importResult.results.categoryConflicts.length > 0 && (
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom color="error.main">
+                      Already Members of Same Category ({importResult.results.categoryConflicts.length})
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                      These students are already members of another club in the same category and cannot be added to multiple clubs in the same category.
+                    </Typography>
+                    <List dense>
+                      {importResult.results.categoryConflicts.slice(0, 3).map((member, index) => (
+                        <ListItem key={index}>
+                          <ListItemText
+                            primary={member.name}
+                            secondary={`Matched from: "${member.extractedName}"`}
+                          />
+                        </ListItem>
+                      ))}
+                      {importResult.results.categoryConflicts.length > 3 && (
+                        <ListItem>
+                          <ListItemText
+                            primary={`... and ${importResult.results.categoryConflicts.length - 3} more`}
                           />
                         </ListItem>
                       )}
