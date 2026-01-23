@@ -84,7 +84,7 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-
+  console.log("The Is Super Admin From the Member Table Row: ", isSuperAdmin);  
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
   }, []);
@@ -248,22 +248,11 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
           }}
         >
           {isSuperAdmin ? (
-            <>
-              <MenuItem disabled sx={{ color: 'text.secondary' }}>
-                <Iconify icon="eva:lock-outline" sx={{ mr: 1 }} />
-                Super Admin View
-              </MenuItem>
-              <MenuItem disabled sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>
-                Contact club admin to manage members
-              </MenuItem>
-            </>
-          ) : (
-            <>
+              <>
               {onRemove && (
                 <MenuItem 
                   onClick={handleRemove}
                   disabled={isRemoving || isDeleting}
-                  sx={{ color: 'warning.main' }}
                 >
                   {isRemoving ? (
                     <CircularProgress size={16} sx={{ mr: 1 }} />
@@ -284,6 +273,18 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
                 </MenuItem>
               )}
             </>
+  
+          ) : (
+            <>
+              <MenuItem disabled sx={{ color: 'text.secondary' }}>
+                <Iconify icon="eva:lock-outline" sx={{ mr: 1 }} />
+                Super Admin View
+              </MenuItem>
+              <MenuItem disabled sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>
+                Contact club admin to manage members
+              </MenuItem>
+            </>
+
           )}
         </MenuList>
       </Popover>

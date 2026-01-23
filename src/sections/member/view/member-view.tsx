@@ -41,6 +41,7 @@ import { useTRPC } from '@/trpc/client';
 export function MemberView() {
   const table = useTable();
   const { userId, role, isSuperAdmin } = useUserRole();
+  console.log("The Is Super Admin From the Member View: ", isSuperAdmin);
 
   const [filterName, setFilterName] = useState('');
   const [students, setStudents] = useState<UserProps[]>([]);
