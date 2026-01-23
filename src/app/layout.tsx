@@ -13,8 +13,8 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/cms-logo-notext-light.svg" type="image/svg+xml" />
-        <link rel="icon" href="/cms-logo-notext-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+        <link rel="icon" href="/cms-logo-notext-dark.svg" type="image/svg+xml" />
+        <link rel="icon" href="/cms-logo-notext-light.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
       </head>
       <body>
         <Providers>
