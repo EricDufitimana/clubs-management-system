@@ -136,7 +136,7 @@ function HeroSection() {
             </motion.div>
             <div className="flex justify-center items-center pt-4">
               <div className="relative p-2 rounded-3xl bg-linear-to-br from-white/20 via-white/10 to-white/5 dark:from-white/5 dark:via-white/3 dark:to-white/1 backdrop-blur-xl border border-white/30 dark:border-white/15 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.4)] before:absolute before:inset-0 before:rounded-3xl before:p-px before:bg-linear-to-br before:from-white/40 before:via-transparent before:to-transparent before:-z-10 before:blur-sm after:absolute after:inset-px after:rounded-3xl after:bg-linear-to-t after:from-black/5 after:via-transparent after:to-transparent after:pointer-events-none">
-                <Image src="/images/hero/hero-dashboard.png" alt="Hero Image" width={1150} height={1000} className='rounded-3xl relative z-10'/>
+                <Image src="/images/hero/hero-dashboard.png" alt="Hero Image" width={1150} height={1000} className='w-full h-auto max-w-[1150px] max-h-[1000px] 2xl:max-w-[1280px] 2xl:max-h-[1240px] rounded-3xl relative z-10'/>
               </div>
             </div>
           </div>

@@ -265,7 +265,7 @@ function Innovation() {
                     viewBox='0 0 32 32'
                     fill='none'
                     xmlns='http://www.w3.org/2000/svg'
-                    className='group-hover:-translate-x-36 transition-all duration-200 ease-in-out'>
+                    className='group-hover:-translate-x-40 group-hover:rotate-45 transition-all duration-200 ease-in-out'>
                     <rect
                       width='32'
                       height='32'
@@ -295,7 +295,7 @@ function Innovation() {
                     viewBox='0 0 32 32'
                     fill='none'
                     xmlns='http://www.w3.org/2000/svg'
-                    className='group-hover:-translate-x-[125px] transition-all duration-200 ease-in-out '>
+                    className='group-hover:-translate-x-28 group-hover:rotate-45 transition-all duration-200 ease-in-out '>
                     <rect width='32' height='32' rx='16' fill='white' />
                     <path
                       d='M11.832 11.3334H20.1654M20.1654 11.3334V19.6668M20.1654 11.3334L11.832 19.6668'

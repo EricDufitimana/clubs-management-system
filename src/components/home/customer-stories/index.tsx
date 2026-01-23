@@ -94,7 +94,7 @@ function CustomerStories() {
                       Customer stories
                     </span>
                     <h3 className="text-white text-2xl">
-                      Their creativity and attention to detail transformed our brand completely!
+                      This system transformed our club's organization. It's so easy to use and manage.
                     </h3>
                     <div>
                       <Image
