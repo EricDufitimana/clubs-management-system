@@ -41,8 +41,9 @@ function HeroSection() {
             <div
               // {...bottomAnimation}
               className='relative flex flex-col text-center items-center gap-4'>
-              <h1>
-                <TextGenerateEffect words="Paper attendance is the problem." />
+              <h1 className='text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl 2xl:text-[86px]'>
+
+                <TextGenerateEffect words="Paper attendance is the problem." className="whitespace-nowrap"/>
                 <br />
                 <TextGenerateEffect words="We're" />
                 <TextGenerateEffect
