@@ -100,14 +100,17 @@ export const usersRouter = createTRPCRouter({
                     select: {
                         id: true,
                         club_name: true,
+                        category: true,
                     }
                 }
             }
         });
 
-        // Map students to clubs
+        // Map students to their clubs (both subject-oriented and soft-oriented)
         const studentMap = new Map<string, {
             student: NonNullable<typeof allMembers[0]['student']>;
+            subjectOrientedClub?: string;
+            softOrientedClub?: string;
             clubName: string;
             status: 'active' | 'left';
         }>();
@@ -117,27 +120,38 @@ export const usersRouter = createTRPCRouter({
             
             const studentIdStr = member.student.id.toString();
             const clubName = member.club?.club_name || '';
+            const clubCategory = member.club?.category;
             
-            // Map student to club name (if multiple clubs, keep the first one found)
+            // Initialize student entry if not exists
             if (!studentMap.has(studentIdStr)) {
                 studentMap.set(studentIdStr, {
                     student: member.student,
+                    subjectOrientedClub: undefined,
+                    softOrientedClub: undefined,
                     clubName,
                     status: member.membership_status,
                 });
-            } else {
-                // Update if current membership is active (prefer active status)
-                const existing = studentMap.get(studentIdStr)!;
-                if (member.membership_status === 'active') {
-                    existing.status = 'active';
-                }
+            }
+            
+            const studentEntry = studentMap.get(studentIdStr)!;
+            
+            // Update club based on category
+            if (clubCategory === 'subject_oriented_clubs') {
+                studentEntry.subjectOrientedClub = clubName;
+            } else if (clubCategory === 'soft_skills_oriented_clubs') {
+                studentEntry.softOrientedClub = clubName;
+            }
+            
+            // Update status (prefer active status)
+            if (member.membership_status === 'active') {
+                studentEntry.status = 'active';
             }
         });
 
         // Map to UserProps structure (only active members)
         return Array.from(studentMap.values())
             .filter(({ status }) => status === 'active')
-            .map(({ student, clubName }) => {
+            .map(({ student, subjectOrientedClub, softOrientedClub, clubName }) => {
             const avatarUrl = getAvatarUrl(student.gender || undefined, student.id);
             
             return {
@@ -149,6 +163,8 @@ export const usersRouter = createTRPCRouter({
                 avatarUrl,
                 isVerified: false,
                 club_name: clubName || null,
+                subject_oriented_club: subjectOrientedClub || null,
+                soft_oriented_club: softOrientedClub || null,
             };
         });
     }),

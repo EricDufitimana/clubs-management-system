@@ -37,51 +37,6 @@ import { emptyRows, applyFilter, getComparator } from '../utils';
 import type { UserProps } from '../member-table-row';
 import { useTRPC } from '@/trpc/client';
 
-// ----------------------------------------------------------------------
-
-/**
- * Extracts acronym from combination string
- * Handles both formats:
- * - With dashes: "Mathematics-Physics-Computer Science" → "MPC"
- * - Prisma enum (camelCase): "MathematicsPhysicsComputerScience" → "MPC"
- */
-function getCombinationAcronym(combination: string | null | undefined): string {
-  if (!combination || combination === '-') return '-';
-  
-  // If it has dashes, split by dash (database format)
-  if (combination.includes('-')) {
-    return combination
-      .split('-')
-      .map(part => part.trim().charAt(0).toUpperCase())
-      .join('');
-  }
-  
-  // Otherwise, it's a Prisma enum (camelCase format)
-  // Split by capital letters using regex
-  const words = combination.split(/(?=[A-Z])/);
-  
-  // Group multi-word subjects (e.g., "Computer" + "Science" → "ComputerScience")
-  const groupedWords: string[] = [];
-  for (let i = 0; i < words.length; i++) {
-    const currentWord = words[i];
-    const nextWord = words[i + 1];
-    
-    // Check if "Computer" is followed by "Science" - treat as one subject
-    if (currentWord === 'Computer' && nextWord === 'Science') {
-      groupedWords.push('ComputerScience');
-      i++; // Skip the next word since we've merged it
-    } else {
-      groupedWords.push(currentWord);
-    }
-  }
-  
-  // Get first letter of each grouped word
-  return groupedWords
-    .map(word => word.charAt(0).toUpperCase())
-    .join('');
-}
-
-// ----------------------------------------------------------------------
 
 export function MemberView() {
   const table = useTable();
@@ -409,7 +364,10 @@ export function MemberView() {
                   { id: 'name', label: 'Name' },
                   { id: 'company', label: 'Combination' },
                   { id: 'role', label: 'Grade' },
-                  ...(isSuperAdmin ? [{ id: 'club_name', label: 'Club' }] : []),
+                  ...(isSuperAdmin && selectedClubFilter === 'all' ? [
+                    { id: 'subject_oriented_club', label: 'Subject Oriented Club' },
+                    { id: 'soft_oriented_club', label: 'Soft Oriented Club' }
+                  ] : isSuperAdmin ? [{ id: 'club_name', label: 'Club' }] : []),
                   { id: 'status', label: 'Status' },
                   { id: '' },
                 ]}
@@ -417,7 +375,7 @@ export function MemberView() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 6 : 6} align="center">
+                    <TableCell colSpan={isSuperAdmin && selectedClubFilter === 'all' ? 7 : isSuperAdmin ? 6 : 6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -437,6 +395,7 @@ export function MemberView() {
                           onRemove={() => handleRemove(row.id)}
                           onDelete={() => handleDelete(row.id)}
                           isSuperAdmin={isSuperAdmin}
+                          showAllClubs={isSuperAdmin && selectedClubFilter === 'all'}
                         />
                       ))}
 
@@ -447,7 +406,7 @@ export function MemberView() {
 
                     {noStudents && (
                       <TableRow>
-                        <TableCell align="center" colSpan={isSuperAdmin ? 6 : 6}>
+                        <TableCell align="center" colSpan={isSuperAdmin && selectedClubFilter === 'all' ? 7 : isSuperAdmin ? 6 : 6}>
                           <Box sx={{ py: 15, textAlign: 'center' }}>
                             <Typography variant="h6" sx={{ mb: 1 }}>
                               No Members Found

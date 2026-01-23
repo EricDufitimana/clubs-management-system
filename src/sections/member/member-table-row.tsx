@@ -20,6 +20,40 @@ import { Iconify } from '@/components/iconify';
 import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/member/utils/colors';
 
 // ----------------------------------------------------------------------
+function getCombinationAcronym(combination: string | null | undefined): string {
+  if (!combination || combination === '-') return '-';
+
+  if(combination.startsWith('Ey')){
+    return combination;
+  }
+  else if (combination.includes('-')) {
+    return combination
+      .split('-')
+      .map(part => part.trim().charAt(0).toUpperCase())
+      .join('');
+  }
+  
+  
+  const words = combination.split(/(?=[A-Z])/);
+  
+  const groupedWords: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    const currentWord = words[i];
+    const nextWord = words[i + 1];
+    
+    if (currentWord === 'Computer' && nextWord === 'Science') {
+      groupedWords.push('ComputerScience');
+      i++; 
+    } else {
+      groupedWords.push(currentWord);
+    }
+  }
+  
+  return groupedWords
+    .map(word => word.charAt(0).toUpperCase())
+    .join('');
+}
+
 
 export type UserProps = {
   id: string;
@@ -30,6 +64,9 @@ export type UserProps = {
   avatarUrl?: string;
   isVerified?: boolean;
   club_name?: string | null;
+  club_category?: 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null;
+  subject_oriented_club?: string | null;
+  soft_oriented_club?: string | null;
 };
 
 type MemberTableRowProps = {
@@ -39,9 +76,11 @@ type MemberTableRowProps = {
   onRemove?: () => void;
   onDelete?: () => void;
   isSuperAdmin?: boolean;
+  showAllClubs?: boolean;
 };
 
-export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete, isSuperAdmin = false }: MemberTableRowProps) {
+
+export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete, isSuperAdmin = false, showAllClubs = false }: MemberTableRowProps) {
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -105,7 +144,12 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {row.company ? (
               <Label color={getCombinationColor(row.company)} variant="soft">
-                {formatCombination(row.company)}
+                {
+                  isSuperAdmin ?
+                  getCombinationAcronym(row.company)
+                  :
+                  formatCombination(row.company)
+                }
               </Label>
             ) : (
               '-'
@@ -129,24 +173,49 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
         </TableCell>
 
         {isSuperAdmin && (
-          <TableCell>
-            {row.club_name ? (
-              <Label color="default" variant="soft">
-                {row.club_name}
-              </Label>
+          <>
+            {showAllClubs ? (
+              <>
+                <TableCell>
+                  {row.subject_oriented_club ? (
+                    <Label color="primary" variant="soft">
+                      {row.subject_oriented_club}
+                    </Label>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      -
+                    </Typography>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {row.soft_oriented_club ? (
+                    <Label color="secondary" variant="soft">
+                      {row.soft_oriented_club}
+                    </Label>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      -
+                    </Typography>
+                  )}
+                </TableCell>
+              </>
             ) : (
-              <Typography variant="body2" color="text.secondary">
-                No Club
-              </Typography>
+              <TableCell>
+                {row.club_name ? (
+                  <Label color="default" variant="soft">
+                    {row.club_name}
+                  </Label>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No Club
+                  </Typography>
+                )}
+              </TableCell>
             )}
-          </TableCell>
+          </>
         )}
 
-        <TableCell>
-          <Label color={(row.status === 'left' && 'error') || 'success'}>
-            {row.status === 'left' ? 'Left' : 'Active'}
-          </Label>
-        </TableCell>
+   
 
         <TableCell align="right">
           <IconButton onClick={handleOpenPopover}>
