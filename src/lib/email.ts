@@ -124,3 +124,122 @@ export async function sendClubInvite({
   }
 }
 
+export async function sendSuperAdminInvite({
+  to,
+  inviteLink,
+  expiresAt
+}: {
+  to: string;
+  inviteLink: string;
+  expiresAt: Date;
+}) {
+  try {
+    const expiresAtFormatted = expiresAt.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+
+    const currentYear = new Date().getFullYear();
+
+    // Create HTML email content for super admin invite
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin:0;padding:0;background:#ffffff;">
+          <div style="font-family: Arial, Helvetica, sans-serif; max-width: 640px; margin: 0 auto; padding: 32px 20px; color:#111827; background:#ffffff;">
+            <h1 style="font-size:20px; margin:0 0 16px 0; font-weight:700;">
+              Super Admin Invitation
+            </h1>
+
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6;">
+              Hello,
+            </p>
+
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6;">
+              You've been invited to join the Clubs Management System as a <strong>Super Administrator</strong>.
+              This role provides comprehensive system administration privileges.
+            </p>
+
+            <p style="margin:0 0 10px 0; font-size:14px; line-height:1.6;">
+              As a Super Administrator, you can:
+            </p>
+            <ul style="margin:0 0 16px 20px; padding:0; font-size:14px; line-height:1.8;">
+              <li>Manage all clubs and their activities</li>
+              <li>Access system-wide reports and analytics</li>
+              <li>Oversee club registrations and approvals</li>
+            </ul>
+
+            <p style="margin:0 0 12px 0; font-size:14px; line-height:1.6;">
+              To accept this invitation and set up your super admin account, use the link below:
+            </p>
+
+            <p style="margin:0 0 18px 0; font-size:14px; line-height:1.6;">
+              <a href="${inviteLink}" style="color:#111827; text-decoration:underline;">${inviteLink}</a>
+            </p>
+
+            <p style="margin:0 0 18px 0; font-size:14px; line-height:1.6;">
+              This invitation expires on <strong>${expiresAtFormatted}</strong>.
+            </p>
+
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;" />
+
+            <p style="margin:0 0 8px 0; font-size:12px; line-height:1.6; color:#6b7280;">
+              If you weren't expecting this email, you can ignore it. No account will be created unless you accept the invitation.
+            </p>
+            <p style="margin:0; font-size:12px; line-height:1.6; color:#9ca3af;">
+              © ${currentYear} Clubs Management System
+            </p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    // Get Supabase URL and anon key for edge function call
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('[SEND_SUPER_ADMIN_EMAIL] Supabase configuration missing');
+      return { error: 'Email service configuration error' };
+    }
+
+    // Call the edge function
+    const functionUrl = `${supabaseUrl}/functions/v1/send_invite_emails`;
+    
+    console.log('[SEND_SUPER_ADMIN_EMAIL] Calling edge function:', functionUrl);
+    
+    const response = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({
+        recipient_emails: [to],
+        subject: 'Super Admin Invitation - Clubs Management System',
+        content: htmlContent
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[SEND_SUPER_ADMIN_EMAIL] Edge function error:', data);
+      return { error: data.error || 'Failed to send email', details: data.details };
+    }
+
+    console.log('[SEND_SUPER_ADMIN_EMAIL] Email sent successfully:', data.messageId);
+    return { success: true, emailId: data.messageId };
+  } catch (error) {
+    console.error('[SEND_SUPER_ADMIN_EMAIL] Exception:', error);
+    return { error: 'Failed to send email' };
+  }
+}
+

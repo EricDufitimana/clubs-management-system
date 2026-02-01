@@ -33,6 +33,7 @@ import { AddClubDialog } from '../components/add-club-dialog';
 import { EditClubDialog } from '../components/edit-club-dialog';
 import { emptyRows, applyFilter, getComparator } from '../utils';
 import { InviteOfficersDialog } from '../components/invite-officers-dialog';
+import { InviteSuperAdminDialog } from '@/components/super-admin/invite-super-admin-dialog';
 
 import type { ClubProps } from '../club-table-row';
 
@@ -49,6 +50,7 @@ export function ClubsView() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openInviteDialog, setOpenInviteDialog] = useState(false);
+  const [openSuperAdminInviteDialog, setOpenSuperAdminInviteDialog] = useState(false);
   const [selectedClub, setSelectedClub] = useState<ClubProps | null>(null);
   const [selectedClubForInvite, setSelectedClubForInvite] = useState<{id: string; name: string} | null>(null);
   const [filterName, setFilterName] = useState('');
@@ -245,6 +247,22 @@ export function ClubsView() {
     setSelectedClubForInvite(null);
   }, []);
 
+  const handleOpenSuperAdminInviteDialog = useCallback(() => {
+    setOpenSuperAdminInviteDialog(true);
+  }, []);
+
+  const handleCloseSuperAdminInviteDialog = useCallback(() => {
+    setOpenSuperAdminInviteDialog(false);
+  }, []);
+
+  const handleSuperAdminInviteSuccess = useCallback(() => {
+    setSnackbar({
+      open: true,
+      message: 'Super admin invitation sent successfully!',
+      severity: 'success'
+    });
+  }, []);
+
   const handleInviteSuccess = useCallback(() => {
     setSnackbar({
       open: true,
@@ -270,6 +288,15 @@ export function ClubsView() {
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Clubs
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Iconify icon="mingcute:user-add-line" />}
+          onClick={handleOpenSuperAdminInviteDialog}
+          sx={{ mr: 2 }}
+        >
+          Add New Super Admin
+        </Button>
         <Button
           variant="contained"
           color="inherit"
@@ -373,6 +400,13 @@ export function ClubsView() {
         clubName={selectedClubForInvite?.name}
         onClose={handleCloseInviteDialog}
         onSuccess={handleInviteSuccess}
+        onError={handleError}
+      />
+      
+      <InviteSuperAdminDialog
+        open={openSuperAdminInviteDialog}
+        onClose={handleCloseSuperAdminInviteDialog}
+        onSuccess={handleSuperAdminInviteSuccess}
         onError={handleError}
       />
       
