@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -20,11 +21,12 @@ import { DashboardContent } from '@/layouts/dashboard';
 import { useTRPC } from '@/trpc/client';
 
 import { Iconify } from '@/components/iconify';
-import Link from 'next/link';
 
 import { AnalyticsWidgetSummary } from '@/sections/overview/analytics-widget-summary';
 import { AnalyticsWebsiteVisits } from '@/sections/overview/analytics-website-visits';
 import { AnalyticsCurrentVisits } from '@/sections/overview/analytics-current-visits';
+import { Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 // ----------------------------------------------------------------------
 
@@ -81,7 +83,58 @@ type ReportsResponse = {
 export function SuperAdminReportsView() {
   const theme = useTheme();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery(trpc.dashboard.getSuperAdminReports.queryOptions());
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportStudents = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      // Use your existing tRPC client instead of manual fetch
+      const usersData = await queryClient.fetchQuery(trpc.users.getAllUsers.queryOptions());
+
+      // Transform data
+      const transformedData = usersData.map((user: any) => ({
+        'First Name': user.name.split(' ')[0] || '',
+        'Last Name': user.name.split(' ').slice(1).join(' ') || '',
+        'Full Name': user.name,
+        'Grade': user.role || '',
+        'Combination': user.company || '',
+        'Soft Skills Club': user.soft_oriented_club || '',
+        'Science Oriented Club': user.subject_oriented_club || '',
+      }));
+
+      // Create worksheet from data
+      const worksheet = XLSX.utils.json_to_sheet(transformedData);
+
+      // Set column widths (optional but recommended)
+      const columnWidths = [
+        { wch: 15 }, // First Name
+        { wch: 15 }, // Last Name
+        { wch: 25 }, // Full Name
+        { wch: 10 }, // Grade
+        { wch: 20 }, // Combination
+        { wch: 25 }, // Soft Skills Club
+        { wch: 30 }, // Science Oriented Club
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+
+      // Generate file and download
+      const fileName = `students_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+    } catch (error: any) {
+      console.error('Export failed:', error);
+      // Better error handling - you could use a toast notification here
+      alert(`Failed to export students data: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [trpc]);
 
   if (isLoading) {
     return (
@@ -155,13 +208,12 @@ export function SuperAdminReportsView() {
           </Typography>
         </Box>
         <Button
-          component={Link}
-          href="/dashboard/super-admin/reports/multiple-clubs"
           variant="contained"
           color="inherit"
-          startIcon={<Iconify icon="mingcute:group-2-line" />}
+          startIcon={isExporting ? <Loader2 className='animate-spin ' />: <Iconify icon="mingcute:download-2-line" />}
+          onClick={handleExportStudents}
         >
-          Multiple Clubs Report
+          Export Students
         </Button>
       </Box>
 
