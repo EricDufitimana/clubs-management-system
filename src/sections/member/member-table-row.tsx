@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
@@ -16,8 +17,10 @@ import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
 import { Label } from '@/components/label';
 import { Iconify } from '@/components/iconify';
+import { useTRPC } from '@/trpc/client';
 
 import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/member/utils/colors';
+import { SelectClubDialog } from './select-club-dialog';
 
 // ----------------------------------------------------------------------
 function getCombinationAcronym(combination: string | null | undefined): string {
@@ -77,14 +80,35 @@ type MemberTableRowProps = {
   onDelete?: () => void;
   isSuperAdmin?: boolean;
   showAllClubs?: boolean;
+  clubs?: Array<{ id: string; club_name: string }>;
 };
 
 
-export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete, isSuperAdmin = false, showAllClubs = false }: MemberTableRowProps) {
+export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete, isSuperAdmin = false, showAllClubs = false, clubs = [] }: MemberTableRowProps) {
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showSelectClubDialog, setShowSelectClubDialog] = useState(false);
+  
+  const trpc = useTRPC();
+
   console.log("The Is Super Admin From the Member Table Row: ", isSuperAdmin);  
+  
+  // Mutation for marking member as left from specific club (super admin only)
+  const markAsLeftFromClubMutation = useMutation({
+    ...trpc.users.markMemberAsLeftFromClub.mutationOptions(),
+    onSuccess: () => {
+      setShowSelectClubDialog(false);
+      setOpenPopover(null);
+      if (onRemove) {
+        onRemove();
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error marking member as left from club:', error);
+    },
+  });
+
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
   }, []);
@@ -118,6 +142,27 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
       setOpenPopover(null);
     }
   }, [onDelete, isDeleting]);
+
+  const handleSelectClubForRemoval = useCallback(() => {
+    setShowSelectClubDialog(true);
+  }, []);
+
+  const handleConfirmRemoveFromClub = useCallback((clubId: string) => {
+    markAsLeftFromClubMutation.mutate({
+      memberId: row.id,
+      clubId,
+    });
+  }, [row.id, markAsLeftFromClubMutation]);
+
+  // Find club IDs from club names
+  const getClubIdByName = (clubName: string | null | undefined): string | null => {
+    if (!clubName) return null;
+    const club = clubs.find(c => c.club_name === clubName);
+    return club?.id || null;
+  };
+
+  const subjectOrientedClubId = getClubIdByName(row.subject_oriented_club);
+  const softOrientedClubId = getClubIdByName(row.soft_oriented_club);
 
 
   return (
@@ -251,19 +296,19 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
               <>
               {onRemove && (
                 <MenuItem 
-                  onClick={handleRemove}
-                  disabled={isRemoving || isDeleting}
+                  onClick={handleSelectClubForRemoval}
+                  disabled={markAsLeftFromClubMutation.isPending || isDeleting}
                 >
-                  {isRemoving ? (
+                  {markAsLeftFromClubMutation.isPending ? (
                     <CircularProgress size={16} sx={{ mr: 1 }} />
                   ) : null}
-                  {isRemoving ? 'Marking as left...' : 'Mark as Left'}
+                  {markAsLeftFromClubMutation.isPending ? 'Marking as left...' : 'Mark as Left'}
                 </MenuItem>
               )}
               {onDelete && (
                 <MenuItem 
                   onClick={handleDelete}
-                  disabled={isRemoving || isDeleting}
+                  disabled={markAsLeftFromClubMutation.isPending || isDeleting}
                   sx={{ color: 'error.main' }}
                 >
                   {isDeleting ? (
@@ -288,6 +333,24 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete,
           )}
         </MenuList>
       </Popover>
+
+      <SelectClubDialog
+        open={showSelectClubDialog}
+        onClose={() => setShowSelectClubDialog(false)}
+        onConfirm={handleConfirmRemoveFromClub}
+        memberName={row.name}
+        subjectOrientedClub={
+          row.subject_oriented_club && subjectOrientedClubId
+            ? { name: row.subject_oriented_club, id: subjectOrientedClubId }
+            : null
+        }
+        softOrientedClub={
+          row.soft_oriented_club && softOrientedClubId
+            ? { name: row.soft_oriented_club, id: softOrientedClubId }
+            : null
+        }
+        isLoading={markAsLeftFromClubMutation.isPending}
+      />
     </>
   );
 }

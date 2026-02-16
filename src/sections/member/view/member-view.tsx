@@ -397,6 +397,7 @@ export function MemberView() {
                           onDelete={() => handleDelete(row.id)}
                           isSuperAdmin={isSuperAdmin}
                           showAllClubs={isSuperAdmin && selectedClubFilter === 'all'}
+                          clubs={clubs}
                         />
                       ))}
 

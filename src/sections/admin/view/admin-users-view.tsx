@@ -19,6 +19,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
 
 import { DashboardContent } from '@/layouts/dashboard';
 import { useTRPC } from '@/trpc/client';
@@ -127,6 +128,10 @@ export function AdminUsersView() {
     if (table.selected.length === 0) return;
     markAsLeftMutation.mutate({ memberIds: table.selected });
   }, [table.selected, markAsLeftMutation]);
+
+  const handleMarkSingleMemberAsLeft = useCallback((memberId: string) => {
+    markAsLeftMutation.mutate({ memberIds: [memberId] });
+  }, [markAsLeftMutation]);
 
   const handleOpenDialog = useCallback(() => {
     setOpenDialog(true);
@@ -244,12 +249,13 @@ export function AdminUsersView() {
                   { id: 'company', label: 'Combination' },
                   { id: 'role', label: 'Grade' },
                   { id: 'status', label: 'Status' },
+                  { id: 'actions', label: 'Actions', sortable: false },
                 ]}
               />
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -276,6 +282,18 @@ export function AdminUsersView() {
                       <TableCell>{row.role}</TableCell>
                       <TableCell>
                         <Label color="success">Active</Label>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Mark member as left">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleMarkSingleMemberAsLeft(row.id)}
+                            disabled={markAsLeftMutation.isPending}
+                            sx={{ color: 'warning.main' }}
+                          >
+                            <Iconify icon="solar:logout-2-bold-duotone" width={20} />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))}

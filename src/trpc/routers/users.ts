@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "../init";
+import { createTRPCRouter, adminProcedure, superAdminProcedure } from "../init";
 import { prisma } from "@/lib/prisma";
 import { getAvatarUrl } from "@/utils/get-avatar";
 import { TRPCError } from "@trpc/server";
@@ -271,6 +271,49 @@ export const usersRouter = createTRPCRouter({
                 throw new TRPCError({
                     code: 'INTERNAL_SERVER_ERROR',
                     message: 'Failed to mark members as left',
+                });
+            }
+        }),
+
+    markMemberAsLeftFromClub: superAdminProcedure
+        .input(z.object({
+            memberId: z.string(),
+            clubId: z.string(),
+        }))
+        .mutation(async ({ input }) => {
+            const { memberId, clubId } = input;
+
+            try {
+                // Update the specific club member to mark as left
+                const result = await prisma.clubMember.updateMany({
+                    where: {
+                        student_id: BigInt(memberId),
+                        club_id: BigInt(clubId),
+                        membership_status: 'active',
+                    },
+                    data: {
+                        membership_status: 'left',
+                        left_at: new Date(),
+                    },
+                });
+
+                if (result.count === 0) {
+                    throw new TRPCError({
+                        code: 'NOT_FOUND',
+                        message: 'Member not found in this club',
+                    });
+                }
+
+                return {
+                    success: true,
+                    message: 'Member marked as left from the club',
+                };
+            } catch (error) {
+                console.error('[MARK_MEMBER_AS_LEFT_FROM_CLUB] Error:', error);
+                if (error instanceof TRPCError) throw error;
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to mark member as left from club',
                 });
             }
         }),
