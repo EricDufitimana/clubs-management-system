@@ -162,7 +162,7 @@ export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
 
       {/* Club Selector in sidebar for mobile/small screens */}
       <Box sx={{ my: 2 }}>
-        <ClubSelector variant="sidebar" />
+        <ClubSelector />
       </Box>
 
       <Scrollbar fillContent>

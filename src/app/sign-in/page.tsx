@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 
 import { CONFIG } from 'src/config-global';
 import { AuthLayout } from 'src/layouts/auth';
@@ -14,7 +15,9 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <AuthLayout>
-      <SignInView />
+      <Suspense fallback={<div>Loading...</div>}>
+        <SignInView />
+      </Suspense>
     </AuthLayout>
   );
 }

@@ -33,9 +33,7 @@ export async function validateInvite(token: string) {
     }
 
     // Format role name for display
-    const roleDisplayName = invite.role === 'vice_president' 
-      ? 'Vice President' 
-      : invite.role.charAt(0).toUpperCase() + invite.role.slice(1);
+    const roleDisplayName = invite.role || '';
 
     return { 
       success: true,

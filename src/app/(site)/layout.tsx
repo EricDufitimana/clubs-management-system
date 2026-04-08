@@ -113,5 +113,3 @@ function SiteLayoutContent({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
-
