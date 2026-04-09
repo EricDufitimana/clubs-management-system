@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 
-import { CONFIG } from 'src/config-global';
+import { CONFIG } from '@/config-global';
 import { trpc, getQueryClient } from '@/trpc/server';
 
-import { AttendanceView } from 'src/sections/attendance/view';
+import { PageLoading } from '@/components/shared/page-loading';
+import { AttendanceView } from '@/sections/attendance/view';
 
 // ----------------------------------------------------------------------
 
@@ -26,7 +28,9 @@ export default async function AttendancePage() {
   
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
-      <AttendanceView />
+      <Suspense fallback={<PageLoading />}>
+        <AttendanceView />
+      </Suspense>
     </HydrationBoundary>
   );
 }

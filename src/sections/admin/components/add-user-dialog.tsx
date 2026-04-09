@@ -16,7 +16,7 @@ import Select from '@mui/material/Select';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 
-import { addUser } from 'src/actions/addUser';
+import { addUser } from '@/actions/addUser';
 
 // ----------------------------------------------------------------------
 

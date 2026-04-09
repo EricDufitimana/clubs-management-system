@@ -23,3 +23,4 @@ if (typeof process !== 'undefined') {
     await prisma.$disconnect()
   })
 }
+

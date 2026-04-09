@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { InviteAssignView } from 'src/sections/auth/invite-assign-view';
+import { InviteAssignView } from '@/sections/auth/invite-assign-view';
 
 // ----------------------------------------------------------------------
 

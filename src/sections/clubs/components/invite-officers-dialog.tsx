@@ -26,9 +26,9 @@ import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import Divider from '@mui/material/Divider';
 
-import { Iconify } from 'src/components/iconify';
-import { useTRPC } from 'src/trpc/client';
-import { generateAndSendInvites } from 'src/actions/generateInvites';
+import { Iconify } from '@/components/iconify';
+import { useTRPC } from '@/trpc/client';
+import { generateAndSendInvites } from '@/actions/generateInvites';
 
 // ----------------------------------------------------------------------
 

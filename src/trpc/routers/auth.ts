@@ -39,6 +39,7 @@ export const authRouter = createTRPCRouter({
                         id: true,
                         first_name: true,
                         last_name: true,
+                        avatar_url: true,
                     },
                 });
 
@@ -48,7 +49,7 @@ export const authRouter = createTRPCRouter({
                         email: authUser.email || null,
                         first_name: dbUser.first_name,
                         last_name: dbUser.last_name,
-                        avatarUrl: `/assets/images/avatar/avatar-${(Number(dbUser.id) % 24) + 1}.webp`,
+                        avatarUrl: dbUser.avatar_url || `/assets/images/avatar/avatar-${(Number(dbUser.id) % 24) + 1}.webp`,
                     };
                 }
             }
@@ -172,6 +173,139 @@ export const authRouter = createTRPCRouter({
                 message: "Failed to login",
             })
         }
-    })
-})
+    }),
+
+    signup: baseProcedure
+        .input(
+            z.object({
+                first_name: z.string().min(1, "First name is required"),
+                last_name: z.string().min(1, "Last name is required"),
+                email: z.string().email("Invalid email address"),
+                password: z.string().min(6, "Password must be at least 6 characters long"),
+            })
+        )
+        .mutation(async ({ input }) => {
+            const supabase = await createClient();
+            try {
+                const { first_name, last_name, email, password } = input;
+                console.log('[AUTH] Signup attempt for:', email);
+
+                // Combine first and last name for display name
+                const display_name = `${first_name} ${last_name}`.trim();
+
+                const { data: authData, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            first_name,
+                            last_name,
+                            display_name,
+                        }
+                    }
+                });
+
+                if (error) {
+                    console.log('[AUTH] Signup failed:', error.message);
+                    throw new TRPCError({
+                        code: 'BAD_REQUEST',
+                        message: error.message,
+                    });
+                }
+
+                console.log('[AUTH] Signup successful for:', authData.user?.email);
+
+                // Insert user into users table
+                if (authData.user?.id) {
+                    console.log('[AUTH] Inserting user into users table...');
+                    const { error: dbError } = await supabase
+                        .from('users')
+                        .insert({
+                            user_id: authData.user.id,
+                            first_name,
+                            last_name,
+                            role: 'admin' // Default role is admin
+                        });
+
+                    if (dbError) {
+                        console.error('[AUTH] Error inserting user into database:', dbError.message);
+                        // Don't fail the signup if database insert fails, but log it
+                    } else {
+                        console.log('[AUTH] User successfully inserted into users table');
+                    }
+                }
+
+                // Update the user's display name if needed
+                if (authData.user) {
+                    console.log('[AUTH] Updating user display name...');
+                    const { error: updateError } = await supabase.auth.updateUser({
+                        data: {
+                            display_name
+                        }
+                    });
+
+                    if (updateError) {
+                        console.log('[AUTH] Warning: Could not update display name:', updateError.message);
+                    } else {
+                        console.log('[AUTH] Display name updated successfully');
+                    }
+                }
+
+                revalidatePath('/');
+
+                return {
+                    success: true,
+                    message: 'Account created successfully!',
+                    user: {
+                        email: authData.user?.email,
+                    },
+                };
+            } catch (error: any) {
+                console.error('[AUTH] Signup error:', error);
+                if (error instanceof TRPCError) {
+                    throw error;
+                }
+                throw new TRPCError({
+                    code: "INTERNAL_SERVER_ERROR",
+                });
+            }
+        }),
+
+    updateUserAvatar: baseProcedure
+        .input(z.object({
+            avatarUrl: z.string(),
+        }))
+        .mutation(async ({ ctx, input }) => {
+            const supabase = await createClient();
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                throw new TRPCError({
+                    code: 'UNAUTHORIZED',
+                    message: 'Not authenticated',
+                });
+            }
+
+            try {
+                // Update in database if exists
+                await prisma.user.update({
+                    where: { auth_user_id: user.id },
+                    data: { avatar_url: input.avatarUrl },
+                });
+
+                // Update in supabase metadata as fallback/cache
+                await supabase.auth.updateUser({
+                    data: { avatar_url: input.avatarUrl }
+                });
+
+                return { success: true };
+            } catch (error) {
+                console.error('[AUTH] Update avatar error:', error);
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to update avatar',
+                });
+            }
+        }),
+});
 

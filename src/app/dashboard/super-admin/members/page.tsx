@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
-import { CONFIG } from 'src/config-global';
+import { CONFIG } from '@/config-global';
 
-import { MemberView } from 'src/sections/member/view';
+import { MemberView } from '@/sections/member/view';
 
 // ----------------------------------------------------------------------
 

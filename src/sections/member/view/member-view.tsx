@@ -18,14 +18,14 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useUserRole } from 'src/hooks/use-user-role';
+import { useUserRole } from '@/hooks/use-user-role';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { Iconify } from '@/components/iconify';
+import { Scrollbar } from '@/components/scrollbar';
 
-import { AddMemberDialog } from 'src/sections/admin/components/add-member-dialog';
+import { AddMemberDialog } from '@/sections/admin/components/add-member-dialog';
 
 import { TableNoData } from '../table-no-data';
 import { MemberTableRow } from '../member-table-row';
@@ -37,55 +37,11 @@ import { emptyRows, applyFilter, getComparator } from '../utils';
 import type { UserProps } from '../member-table-row';
 import { useTRPC } from '@/trpc/client';
 
-// ----------------------------------------------------------------------
-
-/**
- * Extracts acronym from combination string
- * Handles both formats:
- * - With dashes: "Mathematics-Physics-Computer Science" → "MPC"
- * - Prisma enum (camelCase): "MathematicsPhysicsComputerScience" → "MPC"
- */
-function getCombinationAcronym(combination: string | null | undefined): string {
-  if (!combination || combination === '-') return '-';
-  
-  // If it has dashes, split by dash (database format)
-  if (combination.includes('-')) {
-    return combination
-      .split('-')
-      .map(part => part.trim().charAt(0).toUpperCase())
-      .join('');
-  }
-  
-  // Otherwise, it's a Prisma enum (camelCase format)
-  // Split by capital letters using regex
-  const words = combination.split(/(?=[A-Z])/);
-  
-  // Group multi-word subjects (e.g., "Computer" + "Science" → "ComputerScience")
-  const groupedWords: string[] = [];
-  for (let i = 0; i < words.length; i++) {
-    const currentWord = words[i];
-    const nextWord = words[i + 1];
-    
-    // Check if "Computer" is followed by "Science" - treat as one subject
-    if (currentWord === 'Computer' && nextWord === 'Science') {
-      groupedWords.push('ComputerScience');
-      i++; // Skip the next word since we've merged it
-    } else {
-      groupedWords.push(currentWord);
-    }
-  }
-  
-  // Get first letter of each grouped word
-  return groupedWords
-    .map(word => word.charAt(0).toUpperCase())
-    .join('');
-}
-
-// ----------------------------------------------------------------------
 
 export function MemberView() {
   const table = useTable();
   const { userId, role, isSuperAdmin } = useUserRole();
+  console.log("The Is Super Admin From the Member View: ", isSuperAdmin);
 
   const [filterName, setFilterName] = useState('');
   const [students, setStudents] = useState<UserProps[]>([]);
@@ -147,7 +103,7 @@ export function MemberView() {
     onSuccess: () => {
       setSnackbar({
         open: true,
-        message: 'Member removed successfully',
+        message: 'Member marked as left successfully',
         severity: 'success',
       });
       // Invalidate queries to refetch data
@@ -157,7 +113,53 @@ export function MemberView() {
     onError: (error: any) => {
       setSnackbar({
         open: true,
-        message: error.message || 'Failed to remove member',
+        message: error.message || 'Failed to mark member as left',
+        severity: 'error',
+      });
+    },
+  });
+
+  // Delete member mutation
+  const deleteMemberMutation = useMutation({
+    ...trpc.students.deleteMember.mutationOptions(),
+    onSuccess: () => {
+      setSnackbar({
+        open: true,
+        message: 'Member deleted successfully',
+        severity: 'success',
+      });
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: trpc.users.getUsersByClub.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.users.getAllUsers.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to delete member',
+        severity: 'error',
+      });
+    },
+  });
+
+  // Delete multiple members mutation
+  const deleteMultipleMembersMutation = useMutation({
+    ...trpc.students.deleteMultipleMembers.mutationOptions(),
+    onSuccess: (data) => {
+      setSnackbar({
+        open: true,
+        message: data.message || 'Members deleted successfully',
+        severity: 'success',
+      });
+      // Clear selection
+      table.setSelected([]);
+      // Invalidate queries to refetch data
+      queryClient.invalidateQueries({ queryKey: trpc.users.getUsersByClub.queryKey() });
+      queryClient.invalidateQueries({ queryKey: trpc.users.getAllUsers.queryKey() });
+    },
+    onError: (error: any) => {
+      setSnackbar({
+        open: true,
+        message: error.message || 'Failed to delete members',
         severity: 'error',
       });
     },
@@ -244,6 +246,25 @@ export function MemberView() {
     });
   }, [removeStudentMutation, currentUserClubId]);
 
+  const handleDelete = useCallback((studentId: string) => {
+    deleteMemberMutation.mutate({
+      studentId,
+      clubId: currentUserClubId || undefined,
+    });
+  }, [deleteMemberMutation, currentUserClubId]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (table.selected.length === 0) return;
+    
+    // Show confirmation dialog
+    if (window.confirm(`Are you sure you want to delete ${table.selected.length} member(s)? This action cannot be undone.`)) {
+      deleteMultipleMembersMutation.mutate({
+        studentIds: table.selected,
+        clubId: currentUserClubId || undefined,
+      });
+    }
+  }, [table.selected, deleteMultipleMembersMutation, currentUserClubId]);
+
 
   // Filter by club if super_admin and club filter is selected
   const filteredByClub = isSuperAdmin && selectedClubFilter !== 'all'
@@ -322,6 +343,7 @@ export function MemberView() {
             setSelectedClubFilter(club);
             table.onResetPage();
           }}
+          onDeleteSelected={!isSuperAdmin ? handleDeleteSelected : undefined}
         />
 
         <Scrollbar>
@@ -343,7 +365,10 @@ export function MemberView() {
                   { id: 'name', label: 'Name' },
                   { id: 'company', label: 'Combination' },
                   { id: 'role', label: 'Grade' },
-                  ...(isSuperAdmin ? [{ id: 'club_name', label: 'Club' }] : []),
+                  ...(isSuperAdmin && selectedClubFilter === 'all' ? [
+                    { id: 'subject_oriented_club', label: 'Subject Oriented Club' },
+                    { id: 'soft_oriented_club', label: 'Soft Oriented Club' }
+                  ] : isSuperAdmin ? [{ id: 'club_name', label: 'Club' }] : []),
                   { id: 'status', label: 'Status' },
                   { id: '' },
                 ]}
@@ -351,7 +376,7 @@ export function MemberView() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={isSuperAdmin ? 6 : 6} align="center">
+                    <TableCell colSpan={isSuperAdmin && selectedClubFilter === 'all' ? 7 : isSuperAdmin ? 6 : 6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -368,8 +393,11 @@ export function MemberView() {
                           row={row}
                           selected={table.selected.includes(row.id)}
                           onSelectRow={() => table.onSelectRow(row.id)}
-                          onRemove={isSuperAdmin ? undefined : () => handleRemove(row.id)}
+                          onRemove={() => handleRemove(row.id)}
+                          onDelete={() => handleDelete(row.id)}
                           isSuperAdmin={isSuperAdmin}
+                          showAllClubs={isSuperAdmin && selectedClubFilter === 'all'}
+                          clubs={clubs}
                         />
                       ))}
 
@@ -380,16 +408,26 @@ export function MemberView() {
 
                     {noStudents && (
                       <TableRow>
-                        <TableCell align="center" colSpan={isSuperAdmin ? 6 : 6}>
+                        <TableCell align="center" colSpan={isSuperAdmin && selectedClubFilter === 'all' ? 7 : isSuperAdmin ? 6 : 6}>
                           <Box sx={{ py: 15, textAlign: 'center' }}>
                             <Typography variant="h6" sx={{ mb: 1 }}>
-                              {isSuperAdmin ? 'No Members Found' : 'No Members Found'}
+                              No Members Found
                             </Typography>
                             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                               {isSuperAdmin 
-                                ? 'There are no members in the system yet.' 
-                                : 'There are no members in the system yet.'}
+                                ? 'There are no members in the system yet. Club leaders can add members to their clubs.' 
+                                : 'There are no members in your club yet. Use the "Add Members" button to get started.'}
                             </Typography>
+                            {!isSuperAdmin && currentUserClubId && (
+                              <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenDialog}
+                                sx={{ mt: 2 }}
+                              >
+                                Add Your First Member
+                              </Button>
+                            )}
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -502,6 +540,7 @@ export function useTable() {
     onChangePage,
     onSelectAllRows,
     onChangeRowsPerPage,
+    setSelected,
   };
 }
 

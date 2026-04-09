@@ -1,15 +1,16 @@
 'use client';
 
 import type { CardProps } from '@mui/material/Card';
-import type { ChartOptions } from 'src/components/chart';
+import type { ChartOptions } from '@/components/types';
 
 import Card from '@mui/material/Card';
 import CardHeader from '@mui/material/CardHeader';
 import { useTheme, alpha as hexAlpha } from '@mui/material/styles';
 
-import { fNumber } from 'src/utils/format-number';
+import { fNumber } from '@/utils/format-number';
 
-import { Chart, useChart } from 'src/components/chart';
+import { Chart } from '@/components/chart';
+import { useChart } from '@/components/use-chart';
 
 // ----------------------------------------------------------------------
 

@@ -1,4 +1,4 @@
-import { AttendanceView } from 'src/sections/attendance/view';
+import { AttendanceView } from '@/sections/attendance/view';
 
 // ----------------------------------------------------------------------
 

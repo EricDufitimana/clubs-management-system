@@ -104,6 +104,6 @@ export const themeConfig: ThemeConfig = {
    *************************************** */
   cssVariables: {
     cssVarPrefix: '',
-    colorSchemeSelector: 'data-color-scheme',
+    colorSchemeSelector: 'class',
   },
 };

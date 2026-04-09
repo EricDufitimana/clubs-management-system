@@ -7,8 +7,8 @@ import Grid from '@mui/material/Grid';
 import Pagination from '@mui/material/Pagination';
 import Typography from '@mui/material/Typography';
 
-import { _products } from 'src/_mock';
-import { DashboardContent } from 'src/layouts/dashboard';
+import { _products } from '@/_mock';
+import { DashboardContent } from '@/layouts/dashboard';
 
 import { ProductItem } from '../product-item';
 import { ProductSort } from '../product-sort';

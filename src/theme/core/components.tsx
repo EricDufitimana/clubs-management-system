@@ -1,6 +1,7 @@
 import type { Theme, Components } from '@mui/material/styles';
 
 import { varAlpha } from 'minimal-shared/utils';
+import { alpha } from '@mui/material/styles';
 
 import SvgIcon from '@mui/material/SvgIcon';
 
@@ -9,7 +10,9 @@ import SvgIcon from '@mui/material/SvgIcon';
 const MuiBackdrop: Components<Theme>['MuiBackdrop'] = {
   styleOverrides: {
     root: ({ theme }) => ({
-      backgroundColor: varAlpha(theme.vars.palette.grey['900Channel'], 0.8),
+      backgroundColor: theme.vars?.palette?.grey?.['900Channel']
+        ? varAlpha(theme.vars.palette.grey['900Channel'], 0.8)
+        : alpha(theme.palette.grey[900], 0.8),
     }),
     invisible: {
       background: 'transparent',
@@ -23,11 +26,11 @@ const MuiButton: Components<Theme>['MuiButton'] = {
   },
   styleOverrides: {
     containedInherit: ({ theme }) => ({
-      color: theme.vars.palette.common.white,
-      backgroundColor: theme.vars.palette.grey[800],
+      color: theme.vars?.palette?.common?.white || theme.palette.common.white,
+      backgroundColor: theme.vars?.palette?.grey?.[800] || theme.palette.grey[800],
       '&:hover': {
-        color: theme.vars.palette.common.white,
-        backgroundColor: theme.vars.palette.grey[800],
+        color: theme.vars?.palette?.common?.white || theme.palette.common.white,
+        backgroundColor: theme.vars?.palette?.grey?.[800] || theme.palette.grey[800],
       },
     }),
     sizeLarge: {
@@ -41,8 +44,8 @@ const MuiCard: Components<Theme>['MuiCard'] = {
     root: ({ theme }) => ({
       zIndex: 0,
       position: 'relative',
-      boxShadow: theme.vars.customShadows.card,
-      borderRadius: theme.shape.borderRadius * 2,
+      boxShadow: theme.vars?.customShadows?.card || theme.customShadows?.card || theme.shadows[1],
+      borderRadius: typeof theme.shape?.borderRadius === 'number' ? theme.shape.borderRadius * 2 : 16,
     }),
   },
 };
@@ -62,7 +65,9 @@ const MuiCardHeader: Components<Theme>['MuiCardHeader'] = {
 const MuiOutlinedInput: Components<Theme>['MuiOutlinedInput'] = {
   styleOverrides: {
     notchedOutline: ({ theme }) => ({
-      borderColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.2),
+      borderColor: theme.vars?.palette?.grey?.['500Channel']
+        ? varAlpha(theme.vars.palette.grey['500Channel'], 0.2)
+        : alpha(theme.palette.grey[500], 0.2),
     }),
   },
 };
@@ -72,7 +77,9 @@ const MuiPaper: Components<Theme>['MuiPaper'] = {
   styleOverrides: {
     root: { backgroundImage: 'none' },
     outlined: ({ theme }) => ({
-      borderColor: varAlpha(theme.vars.palette.grey['500Channel'], 0.16),
+      borderColor: theme.vars?.palette?.grey?.['500Channel']
+        ? varAlpha(theme.vars.palette.grey['500Channel'], 0.16)
+        : alpha(theme.palette.grey[500], 0.16),
     }),
   },
 };
@@ -81,9 +88,9 @@ const MuiTableCell: Components<Theme>['MuiTableCell'] = {
   styleOverrides: {
     head: ({ theme }) => ({
       fontSize: theme.typography.pxToRem(14),
-      color: theme.vars.palette.text.secondary,
+      color: theme.vars?.palette?.text?.secondary || theme.palette.text.secondary,
       fontWeight: theme.typography.fontWeightSemiBold,
-      backgroundColor: theme.vars.palette.background.neutral,
+      backgroundColor: theme.vars?.palette?.background?.neutral || theme.palette.background.paper,
     }),
   },
 };

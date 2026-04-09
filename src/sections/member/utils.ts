@@ -70,9 +70,22 @@ export function applyFilter({ inputData, comparator, filterName }: ApplyFilterPr
   inputData = stabilizedThis.map((el) => el[0]);
 
   if (filterName) {
-    inputData = inputData.filter(
-      (user) => user.name.toLowerCase().indexOf(filterName.toLowerCase()) !== -1
-    );
+    const searchTerms = filterName.toLowerCase().trim().split(/\s+/);
+    inputData = inputData.filter((user) => {
+      const userName = user.name.toLowerCase();
+      const searchLower = filterName.toLowerCase();
+      
+      // Original: check if full search term is in full name
+      if (userName.includes(searchLower)) {
+        return true;
+      }
+      
+      // Enhanced: check if all search terms match parts of the name (handles swapped names)
+      const nameParts = userName.split(/\s+/);
+      return searchTerms.every(term => 
+        nameParts.some(part => part.includes(term))
+      );
+    });
   }
 
   return inputData;

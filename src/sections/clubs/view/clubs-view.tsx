@@ -17,10 +17,10 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { Iconify } from '@/components/iconify';
+import { Scrollbar } from '@/components/scrollbar';
 import { useTRPC } from '@/trpc/client';
 
 import { useTable } from './use-table';
@@ -33,6 +33,7 @@ import { AddClubDialog } from '../components/add-club-dialog';
 import { EditClubDialog } from '../components/edit-club-dialog';
 import { emptyRows, applyFilter, getComparator } from '../utils';
 import { InviteOfficersDialog } from '../components/invite-officers-dialog';
+import { InviteSuperAdminDialog } from '@/components/super-admin/invite-super-admin-dialog';
 
 import type { ClubProps } from '../club-table-row';
 
@@ -49,6 +50,7 @@ export function ClubsView() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openInviteDialog, setOpenInviteDialog] = useState(false);
+  const [openSuperAdminInviteDialog, setOpenSuperAdminInviteDialog] = useState(false);
   const [selectedClub, setSelectedClub] = useState<ClubProps | null>(null);
   const [selectedClubForInvite, setSelectedClubForInvite] = useState<{id: string; name: string} | null>(null);
   const [filterName, setFilterName] = useState('');
@@ -153,7 +155,8 @@ export function ClubsView() {
         id: club.id,
         name: club.club_name,
         description: club.club_description,
-        members: 0, // TODO: Add members count when available
+        category: club.category,
+        members: club.member_count || 0,
         status: club.status === 'terminated' ? 'inactive' : club.status,
       }));
       setClubs(mappedClubs);
@@ -244,6 +247,22 @@ export function ClubsView() {
     setSelectedClubForInvite(null);
   }, []);
 
+  const handleOpenSuperAdminInviteDialog = useCallback(() => {
+    setOpenSuperAdminInviteDialog(true);
+  }, []);
+
+  const handleCloseSuperAdminInviteDialog = useCallback(() => {
+    setOpenSuperAdminInviteDialog(false);
+  }, []);
+
+  const handleSuperAdminInviteSuccess = useCallback(() => {
+    setSnackbar({
+      open: true,
+      message: 'Super admin invitation sent successfully!',
+      severity: 'success'
+    });
+  }, []);
+
   const handleInviteSuccess = useCallback(() => {
     setSnackbar({
       open: true,
@@ -269,6 +288,15 @@ export function ClubsView() {
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Clubs
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Iconify icon="mingcute:user-add-line" />}
+          onClick={handleOpenSuperAdminInviteDialog}
+          sx={{ mr: 2 }}
+        >
+          Add New Super Admin
+        </Button>
         <Button
           variant="contained"
           color="inherit"
@@ -307,6 +335,7 @@ export function ClubsView() {
                 headLabel={[
                   { id: 'name', label: 'Club Name' },
                   { id: 'description', label: 'Description' },
+                  { id: 'category', label: 'Category' },
                   { id: 'members', label: 'Members', align: 'center' },
                   { id: 'status', label: 'Status' },
                   { id: '' },
@@ -315,7 +344,7 @@ export function ClubsView() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -371,6 +400,13 @@ export function ClubsView() {
         clubName={selectedClubForInvite?.name}
         onClose={handleCloseInviteDialog}
         onSuccess={handleInviteSuccess}
+        onError={handleError}
+      />
+      
+      <InviteSuperAdminDialog
+        open={openSuperAdminInviteDialog}
+        onClose={handleCloseSuperAdminInviteDialog}
+        onSuccess={handleSuperAdminInviteSuccess}
         onError={handleError}
       />
       

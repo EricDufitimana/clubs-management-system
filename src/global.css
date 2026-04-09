@@ -19,9 +19,8 @@
 /** **************************************
 * Tailwind CSS
 *************************************** */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+@import "tailwindcss";
 
 /** **************************************
 * Baseline

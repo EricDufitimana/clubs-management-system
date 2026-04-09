@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
-import { CONFIG } from 'src/config-global';
-import { trpc, getQueryClient } from 'src/trpc/server';
+import { CONFIG } from '@/config-global';
+import { trpc, getQueryClient } from '@/trpc/server';
 
-import { OverviewAnalyticsView as DashboardView } from 'src/sections/overview/view';
+import { PageLoading } from '@/components/shared/page-loading';
+import { OverviewAnalyticsView as DashboardView } from '@/sections/overview/view';
 
 // ----------------------------------------------------------------------
 
@@ -21,6 +24,12 @@ export default async function SuperAdminPage() {
   const queryClient = getQueryClient();
   await queryClient.prefetchQuery(trpc.dashboard.getStats.queryOptions());
   
-  return <DashboardView />;
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<PageLoading />}>
+        <DashboardView />
+      </Suspense>
+    </HydrationBoundary>
+  );
 }
 

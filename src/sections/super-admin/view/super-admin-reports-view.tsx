@@ -1,24 +1,32 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
 import CircularProgress from '@mui/material/CircularProgress';
+import { useTheme } from '@mui/material/styles';
 
-import { DashboardContent } from 'src/layouts/dashboard';
-import { useTRPC } from 'src/trpc/client';
+import { varAlpha } from 'minimal-shared/utils';
+import { SvgColor } from '@/components/svg-color';
 
-import { Iconify } from 'src/components/iconify';
+import { DashboardContent } from '@/layouts/dashboard';
+import { useTRPC } from '@/trpc/client';
 
-import { AnalyticsWidgetSummary } from 'src/sections/overview/analytics-widget-summary';
-import { AnalyticsWebsiteVisits } from 'src/sections/overview/analytics-website-visits';
-import { AnalyticsCurrentVisits } from 'src/sections/overview/analytics-current-visits';
+import { Iconify } from '@/components/iconify';
+
+import { AnalyticsWidgetSummary } from '@/sections/overview/analytics-widget-summary';
+import { AnalyticsWebsiteVisits } from '@/sections/overview/analytics-website-visits';
+import { AnalyticsCurrentVisits } from '@/sections/overview/analytics-current-visits';
+import { Loader2 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 // ----------------------------------------------------------------------
 
@@ -73,8 +81,60 @@ type ReportsResponse = {
 // ----------------------------------------------------------------------
 
 export function SuperAdminReportsView() {
+  const theme = useTheme();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const { data, isLoading, isError } = useQuery(trpc.dashboard.getSuperAdminReports.queryOptions());
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportStudents = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      // Use your existing tRPC client instead of manual fetch
+      const usersData = await queryClient.fetchQuery(trpc.users.getAllUsers.queryOptions());
+
+      // Transform data
+      const transformedData = usersData.map((user: any) => ({
+        'First Name': user.name.split(' ')[0] || '',
+        'Last Name': user.name.split(' ').slice(1).join(' ') || '',
+        'Full Name': user.name,
+        'Grade': user.role || '',
+        'Combination': user.company || '',
+        'Soft Skills Club': user.soft_oriented_club || '',
+        'Science Oriented Club': user.subject_oriented_club || '',
+      }));
+
+      // Create worksheet from data
+      const worksheet = XLSX.utils.json_to_sheet(transformedData);
+
+      // Set column widths (optional but recommended)
+      const columnWidths = [
+        { wch: 15 }, // First Name
+        { wch: 15 }, // Last Name
+        { wch: 25 }, // Full Name
+        { wch: 10 }, // Grade
+        { wch: 20 }, // Combination
+        { wch: 25 }, // Soft Skills Club
+        { wch: 30 }, // Science Oriented Club
+      ];
+      worksheet['!cols'] = columnWidths;
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+
+      // Generate file and download
+      const fileName = `students_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      XLSX.writeFile(workbook, fileName);
+
+    } catch (error: any) {
+      console.error('Export failed:', error);
+      // Better error handling - you could use a toast notification here
+      alert(`Failed to export students data: ${error.message}`);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [trpc]);
 
   if (isLoading) {
     return (
@@ -140,11 +200,21 @@ export function SuperAdminReportsView() {
 
   return (
     <DashboardContent maxWidth="xl">
-      <Box sx={{ mb: { xs: 3, md: 5 } }}>
-        <Typography variant="h4">Reports & Analytics</Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          High-level insights into club performance across the platform.
-        </Typography>
+      <Box sx={{ mb: { xs: 3, md: 5 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box>
+          <Typography variant="h4">Reports & Analytics</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            High-level insights into club performance across the platform.
+          </Typography>
+        </Box>
+        <Button
+          variant="contained"
+          color="inherit"
+          startIcon={isExporting ? <Loader2 className='animate-spin ' />: <Iconify icon="mingcute:download-2-line" />}
+          onClick={handleExportStudents}
+        >
+          Export Students
+        </Button>
       </Box>
 
       <Grid container spacing={3}>
@@ -191,6 +261,10 @@ export function SuperAdminReportsView() {
           />
         </Grid>
 
+
+      </Grid>
+
+      <Grid container spacing={3} sx={{ mt: 3 }}>
         {/* Monthly attendance trends */}
         <Grid size={{ xs: 12, md: 7 }}>
           <AnalyticsWebsiteVisits
@@ -216,6 +290,8 @@ export function SuperAdminReportsView() {
           <AnalyticsCurrentVisits
             title="Member Activity Breakdown"
             subheader="Active vs inactive members"
+            hideLegends={true}
+            sx={{ minHeight: 440 }} // Match height of monthly attendance trends
             chart={{
               series: [
                 { label: 'Active', value: memberActivityBreakdown.active },

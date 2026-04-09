@@ -1,16 +1,20 @@
 'use client';
 
 import type { CardProps } from '@mui/material/Card';
-import type { ChartOptions } from 'src/components/chart';
+import type { ChartOptions } from '@/components/types';
 
 import Card from '@mui/material/Card';
 import Divider from '@mui/material/Divider';
 import { useTheme } from '@mui/material/styles';
 import CardHeader from '@mui/material/CardHeader';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
 
-import { fNumber } from 'src/utils/format-number';
+import { fNumber } from '@/utils/format-number';
 
-import { Chart, useChart, ChartLegends } from 'src/components/chart';
+import { Chart } from '@/components/chart';
+import { useChart } from '@/components/use-chart';
+import { ChartLegends } from '@/components/components';
 
 // ----------------------------------------------------------------------
 
@@ -25,9 +29,10 @@ type Props = CardProps & {
     }[];
     options?: ChartOptions;
   };
+  hideLegends?: boolean; // New prop to control legend visibility
 };
 
-export function AnalyticsCurrentVisits({ title, subheader, chart, sx, ...other }: Props) {
+export function AnalyticsCurrentVisits({ title, subheader, chart, sx, hideLegends, ...other }: Props) {
   const theme = useTheme();
 
   const chartSeries = chart.series.map((item) => item.value);
@@ -64,20 +69,44 @@ export function AnalyticsCurrentVisits({ title, subheader, chart, sx, ...other }
         series={chartSeries}
         options={chartOptions}
         sx={{
-          my: 6,
+          my: hideLegends ? 2 : 6,
           mx: 'auto',
           width: { xs: 240, xl: 260 },
           height: { xs: 240, xl: 260 },
         }}
       />
 
-      <Divider sx={{ borderStyle: 'dashed' }} />
+      {hideLegends && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, pb: 2 }}>
+          {chart.series.map((item, index) => (
+            <Box key={item.label} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  backgroundColor: chartColors[index],
+                }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {item.label}: {fNumber(item.value)}
+              </Typography>
+            </Box>
+          ))}
+        </Box>
+      )}
 
-      <ChartLegends
-        labels={chartOptions?.labels}
-        colors={chartOptions?.colors}
-        sx={{ p: 3, justifyContent: 'center' }}
-      />
+      {!hideLegends && (
+        <>
+          <Divider sx={{ borderStyle: 'dashed' }} />
+
+          <ChartLegends
+            labels={chartOptions?.labels}
+            colors={chartOptions?.colors}
+            sx={{ p: 3, justifyContent: 'center' }}
+          />
+        </>
+      )}
     </Card>
   );
 }

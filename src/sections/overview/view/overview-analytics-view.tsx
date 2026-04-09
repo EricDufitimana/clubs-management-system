@@ -7,9 +7,9 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 import { useTRPC } from '@/trpc/client';
 
 import { AnalyticsCurrentVisits } from '../analytics-current-visits';
@@ -117,7 +117,7 @@ export function OverviewAnalyticsView() {
       <Grid container spacing={3}>
         <Grid size={{ xs: 12, sm: 6, md: 3 }}>
           <AnalyticsWidgetSummary
-            title="Total Users"
+            title="Total Members"
             percent={calculatePercentChange(stats.totalUsers, stats.trends.users)}
             total={stats.totalUsers}
             icon={<Iconify icon="solar:users-group-rounded-bold-duotone" width={48} />}

@@ -19,23 +19,25 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
 
-import { DashboardContent } from 'src/layouts/dashboard';
-import { useTRPC } from 'src/trpc/client';
+import { DashboardContent } from '@/layouts/dashboard';
+import { useTRPC } from '@/trpc/client';
 import { useClubContext } from '@/contexts/club-context';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { Label } from '@/components/label';
+import { Iconify } from '@/components/iconify';
+import { Scrollbar } from '@/components/scrollbar';
 
-import { TableNoData } from 'src/sections/member/table-no-data';
-import { MemberTableHead } from 'src/sections/member/member-table-head';
-import { TableEmptyRows } from 'src/sections/member/table-empty-rows';
-import { MemberTableToolbar } from 'src/sections/member/member-table-toolbar';
-import { emptyRows, applyFilter, getComparator } from 'src/sections/member/utils';
+import { TableNoData } from '@/sections/member/table-no-data';
+import { MemberTableHead } from '@/sections/member/member-table-head';
+import { TableEmptyRows } from '@/sections/member/table-empty-rows';
+import { MemberTableToolbar } from '@/sections/member/member-table-toolbar';
+import { emptyRows, applyFilter, getComparator } from '@/sections/member/utils';
 
 import { useTable } from './use-table';
 import { AddMemberDialog } from '../components/add-member-dialog';
+import { BulkImportDialog } from '../components/bulk-import-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -53,6 +55,7 @@ export function AdminUsersView() {
   const trpc = useTRPC();
   const table = useTable();
   const [openDialog, setOpenDialog] = useState(false);
+  const [openBulkImportDialog, setOpenBulkImportDialog] = useState(false);
   const [filterName, setFilterName] = useState('');
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
@@ -64,6 +67,10 @@ export function AdminUsersView() {
   const { selectedClub } = useClubContext();
   const currentUserClub = selectedClub?.club_name || null;
   const currentUserClubId = selectedClub?.id || null;
+
+  console.log('[ADMIN_MEMBERS] selectedClub:', selectedClub);
+  console.log('[ADMIN_MEMBERS] currentUserClub:', currentUserClub);
+  console.log('[ADMIN_MEMBERS] currentUserClubId:', currentUserClubId);
 
   // Fetch members using tRPC (filtered by selected club)
   const { data: membersData, isLoading: loading, refetch } = useQuery({
@@ -122,6 +129,10 @@ export function AdminUsersView() {
     markAsLeftMutation.mutate({ memberIds: table.selected });
   }, [table.selected, markAsLeftMutation]);
 
+  const handleMarkSingleMemberAsLeft = useCallback((memberId: string) => {
+    markAsLeftMutation.mutate({ memberIds: [memberId] });
+  }, [markAsLeftMutation]);
+
   const handleOpenDialog = useCallback(() => {
     setOpenDialog(true);
   }, []);
@@ -150,6 +161,14 @@ export function AdminUsersView() {
 
   const handleCloseSnackbar = useCallback(() => {
     setSnackbar(prev => ({ ...prev, open: false }));
+  }, []);
+
+  const handleOpenBulkImportDialog = useCallback(() => {
+    setOpenBulkImportDialog(true);
+  }, []);
+
+  const handleCloseBulkImportDialog = useCallback(() => {
+    setOpenBulkImportDialog(false);
   }, []);
 
   return (
@@ -187,6 +206,15 @@ export function AdminUsersView() {
           >
             Add Members
           </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<Iconify icon="solar:file-import-bold-duotone" />}
+            onClick={handleOpenBulkImportDialog}
+            disabled={!currentUserClubId}
+          >
+            Bulk Import
+          </Button>
         </Box>
       </Box>
 
@@ -221,12 +249,13 @@ export function AdminUsersView() {
                   { id: 'company', label: 'Combination' },
                   { id: 'role', label: 'Grade' },
                   { id: 'status', label: 'Status' },
+                  { id: 'actions', label: 'Actions', sortable: false },
                 ]}
               />
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -253,6 +282,18 @@ export function AdminUsersView() {
                       <TableCell>{row.role}</TableCell>
                       <TableCell>
                         <Label color="success">Active</Label>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Tooltip title="Mark member as left">
+                          <IconButton
+                            size="small"
+                            onClick={() => handleMarkSingleMemberAsLeft(row.id)}
+                            disabled={markAsLeftMutation.isPending}
+                            sx={{ color: 'warning.main' }}
+                          >
+                            <Iconify icon="solar:logout-2-bold-duotone" width={20} />
+                          </IconButton>
+                        </Tooltip>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -283,6 +324,14 @@ export function AdminUsersView() {
         open={openDialog} 
         onClose={handleCloseDialog} 
         onAdd={handleAddUser} 
+        onError={handleError}
+        clubId={currentUserClubId || undefined}
+      />
+      
+      <BulkImportDialog
+        open={openBulkImportDialog}
+        onClose={handleCloseBulkImportDialog}
+        onSuccess={handleAddUser}
         onError={handleError}
         clubId={currentUserClubId || undefined}
       />

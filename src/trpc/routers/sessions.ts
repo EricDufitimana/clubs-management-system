@@ -153,15 +153,48 @@ export const sessionsRouter = createTRPCRouter({
       try {
         const { clubId, notes, date } = input;
         const { clubIds } = ctx;
-
-        // Verify user has access to this club
-        const clubIdBigInt = BigInt(clubId);
+        console.log("Create Session Provided Club Id: ", clubId);
+        console.log("Create Session Club IDs from context: ", clubIds);
+        console.log("Create Session Club IDs types: ", clubIds.map(id => typeof id));
+        console.log("Create Session Club IDs values: ", clubIds);
+        
+        let clubIdBigInt: bigint;
+        try {
+          clubIdBigInt = BigInt(clubId.trim());
+        } catch (error) {
+          console.error("Error converting clubId to BigInt:", error);
+          throw new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message: 'Invalid club ID format',
+          });
+        }
+        
+        console.log("Create Session Club ID as BigInt: ", clubIdBigInt);
+        console.log("Create Session BigInt type: ", typeof clubIdBigInt);
+        console.log("Create Session Comparison result: ", clubIds.includes(clubIdBigInt));
+        
         if (!clubIds.includes(clubIdBigInt)) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'You do not have permission to create sessions for this club',
           });
         }
+
+        // Verify club exists in database
+        const club = await prisma.club.findUnique({
+          where: { id: clubIdBigInt },
+          select: { id: true, club_name: true }
+        });
+
+        if (!club) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Club not found',
+          });
+        }
+        
+        console.log("Create Session Club Found: ", club);
+        console.log("Create Session Club ID as BigInt: ", clubIdBigInt);
 
         const session = await prisma.session.create({
           data: {

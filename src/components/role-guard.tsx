@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import { useUserRole } from 'src/hooks/use-user-role';
+import { useUserRole } from '@/hooks/use-user-role';
 
 // ----------------------------------------------------------------------
 

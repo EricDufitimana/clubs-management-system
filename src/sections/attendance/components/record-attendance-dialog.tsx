@@ -21,13 +21,14 @@ import DialogActions from '@mui/material/DialogActions';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { fDate } from 'src/utils/format-time';
+import { fDate } from '@/utils/format-time';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
+import { Label } from '@/components/label';
+import { Iconify } from '@/components/iconify';
 import { useTRPC } from '@/trpc/client';
 
-import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/member/utils/colors';
+import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/member/utils/colors';
+import { useClubContext } from '@/contexts/club-context';
 
 // ----------------------------------------------------------------------
 
@@ -70,6 +71,7 @@ export function RecordAttendanceDialog({
   const theme = useTheme();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { selectedClub } = useClubContext();
   
   const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [attendance, setAttendance] = useState<Record<string, AttendanceStatus>>({});
@@ -77,16 +79,17 @@ export function RecordAttendanceDialog({
   const [filterGrade, setFilterGrade] = useState<string>('all');
   const [filterCombination, setFilterCombination] = useState<string>('all');
   const [sessions, setSessions] = useState<Session[]>(initialSessions);
+  const [isSelectOpen, setIsSelectOpen] = useState(false);
   const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
     open: false,
     message: '',
     severity: 'success'
   });
 
-  // Fetch sessions without attendance using tRPC
+  // Fetch sessions without attendance using tRPC - filtered by selected club
   const sessionsQuery = useQuery({
-    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions(),
-    enabled: open,
+    ...trpc.sessions.getSessionsWithoutAttendance.queryOptions({ clubId: selectedClub?.id }),
+    enabled: open && !!selectedClub?.id,
   });
   
   const loadingSessions = sessionsQuery.isLoading;
@@ -214,40 +217,87 @@ export function RecordAttendanceDialog({
         <Stack spacing={3} sx={{ pt: 2 }}>
           {/* Session Selection */}
           <Box>
-            <TextField
-              select
-              fullWidth
-              label="Select Session"
-              value={selectedSessionId}
-              onChange={(e) => handleSessionChange(e.target.value)}
-              disabled={loadingSessions}
-              SelectProps={{
-                displayEmpty: true,
-              }}
-              InputProps={{
-                endAdornment: loadingSessions ? (
-                  <InputAdornment position="end">
-                    <CircularProgress size={20} />
-                  </InputAdornment>
-                ) : undefined,
-              }}
-            >
-              <MenuItem value="" disabled={loadingSessions}>
-                <em>Choose session</em>
-              </MenuItem>
-              {sessions.map((session) => (
-                <MenuItem key={session.id} value={session.id}>
-                  <Box>
-                    <Typography variant="body2">
-                      {fDate(session.date, 'DD MMM YYYY')} - {fDate(session.date, 'HH:mm')}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {session.club_name} - {session.notes}
-                    </Typography>
-                  </Box>
+            {loadingSessions ? (
+              <TextField
+                select
+                fullWidth
+                label="Select Session"
+                value=""
+                disabled
+                SelectProps={{
+                  displayEmpty: true,
+                }}
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} />
+                    </InputAdornment>
+                  ),
+                }}
+              >
+                <MenuItem value="">
+                  <em>Loading sessions...</em>
                 </MenuItem>
-              ))}
-            </TextField>
+              </TextField>
+            ) : sessions.length === 0 ? (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Iconify icon="solar:calendar-mark-bold-duotone" width={48} sx={{ color: 'text.disabled', mb: 2 }} />
+                <Typography variant="body1" color="text.secondary" sx={{ mb: 1 }}>
+                  No sessions available
+                </Typography>
+                <Typography variant="body2" color="text.disabled">
+                  Create a session first before recording attendance
+                </Typography>
+              </Box>
+            ) : (
+              <TextField
+                select
+                fullWidth
+                label="Select Session"
+                value={selectedSessionId}
+                onChange={(e) => handleSessionChange(e.target.value)}
+                SelectProps={{
+                  displayEmpty: true,
+                  open: isSelectOpen,
+                  onOpen: () => setIsSelectOpen(true),
+                  onClose: () => setIsSelectOpen(false),
+                  renderValue: (selected) => {
+                    if (!selected) {
+                      return null; // Hide placeholder when closed
+                    }
+                    const session = sessions.find(s => s.id === selected);
+                    if (!session) return null;
+                    
+                    return (
+                      <Box>
+                        <Typography variant="body2">
+                          {fDate(session.date, 'DD MMM YYYY')} - {fDate(session.date, 'HH:mm')}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {session.club_name} - {session.notes}
+                        </Typography>
+                      </Box>
+                    );
+                  },
+                }}
+              >
+                <MenuItem value="">
+                  <em>Choose session</em>
+                </MenuItem>
+                {sessions.map((session) => (
+                  <MenuItem key={session.id} value={session.id}>
+                    <Box>
+                      <Typography variant="body2">
+                        {fDate(session.date, 'DD MMM YYYY')} - {fDate(session.date, 'HH:mm')}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {session.club_name} - {session.notes}
+                      </Typography>
+                      </Box>
+                    </MenuItem>
+                ))}
+              </TextField>
+            )}
           
           </Box>
 
@@ -255,9 +305,25 @@ export function RecordAttendanceDialog({
             <>
               {/* Students List */}
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                  Students ({filteredStudents.length})
-                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                  <Typography variant="subtitle2">
+                    Students ({filteredStudents.length})
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                    onClick={() => {
+                      const newAttendance: Record<string, AttendanceStatus> = {};
+                      filteredStudents.forEach(student => {
+                        newAttendance[student.id] = 'present';
+                      });
+                      setAttendance(prev => ({ ...prev, ...newAttendance }));
+                    }}
+                  >
+                    Mark All as Present
+                  </Button>
+                </Box>
                 <Stack spacing={1}>
                   {filteredStudents.map((student) => {
                     const studentAttendance = attendance[student.id] || '';

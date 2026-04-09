@@ -15,6 +15,13 @@ enum UserRole {
   @@map("user_role")
 }
 
+enum ClubCategory{
+  subject_oriented_clubs
+  soft_skills_oriented_clubs
+
+  @@map("club_category")
+}
+
 enum ClubStatus {
   active
   terminated
@@ -22,13 +29,39 @@ enum ClubStatus {
   @@map("club_status") //  Maps to the actual PostgreSQL enum name
 }
 
+enum UserRoleWaitlist {
+  student
+  school_administrator
+  teacher
+
+  @@map("user_role_waitlist")
+}
+
+enum OrganizationMethod {
+  whatsapp
+  excel
+  paper
+  other
+
+  @@map("organization_method")
+}
+
+enum WillingnessToPay {
+  yes
+  maybe
+  no
+
+  @@map("willingness_to_pay")
+}
+
 model User {
   id           BigInt   @id @default(autoincrement())
   auth_user_id String?  @unique @map("auth_user_id") @db.Uuid
   first_name   String   @db.Text
   last_name    String   @db.Text
-  role         UserRole @default(admin)
+  role         UserRole
   created_at   DateTime @default(now()) @db.Timestamptz
+  avatar_url   String?  @map("avatar_url") @db.Text
 
   clubLeaders ClubLeader[]
 
@@ -42,6 +75,8 @@ model Club {
   club_description String     @db.Text
   status           ClubStatus @default(active)
   created_by       String     @db.Text
+  category         ClubCategory?  
+
 
   members     ClubMember[]
   leaders     ClubLeader[]
@@ -49,14 +84,6 @@ model Club {
   sessions    Session[]
 
   @@map("clubs")
-}
-
-enum ClubLeaderRole {
-  president
-  vice_president @map("vice-president")
-  secretary
-
-  @@map("role")
 }
 
 enum Grade {
@@ -77,6 +104,11 @@ enum Combination {
   MathematicsComputerScienceEconomics           @map("Mathematics-Computer Science-Economics")
   PhysicsChemistryBiology                       @map("Physics-Chemistry-Biology")
   HistoryGeographyLiterature                    @map("History-Geography-Literature")
+  EyFalcon                                      @map("EY-Falcon")
+  EyDove                                        @map("EY-Dove")
+  EyEagle                                       @map("EY-Eagle")
+  EySparrow                                     @map("EY-Sparrow")
+
 
   @@map("combination")
 }
@@ -171,7 +203,7 @@ model ClubLeader {
   id        BigInt         @id @default(autoincrement())
   user_id   BigInt
   club_id   BigInt
-  role      ClubLeaderRole
+  role      String
   created_at DateTime       @default(now()) @db.Timestamptz
 
   user User @relation(fields: [user_id], references: [id])
@@ -196,4 +228,36 @@ model Attendance {
   @@index([session_id])
   @@index([student_id])
   @@map("attendance")
+}
+
+model SuperAdminInvite {
+  id         BigInt   @id @default(autoincrement())
+  email      String   @db.Text
+  token      String   @unique @db.Text
+  expires_at DateTime @db.Timestamptz
+  created_at DateTime @default(now()) @db.Timestamptz
+  used_at    DateTime? @db.Timestamptz
+
+  @@index([token])
+  @@index([email])
+  @@map("super_admin_invites")
+}
+
+model Waitlist {
+  id                BigInt            @id @default(autoincrement())
+  full_name         String            @db.VarChar(255)
+  email             String            @unique @db.VarChar(255)
+  role              UserRoleWaitlist
+  school_organization String           @map("school_organization") @db.VarChar(255)
+  country           String            @db.VarChar(100)
+  current_method    OrganizationMethod @map("current_method")
+  other_method      String?           @map("other_method") @db.Text
+  willing_to_pay    WillingnessToPay  @map("willing_to_pay")
+  created_at        DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updated_at        DateTime          @default(now()) @map("updated_at") @db.Timestamptz
+
+  @@index([email])
+  @@index([country])
+  @@index([role])
+  @@map("waitlist")
 }

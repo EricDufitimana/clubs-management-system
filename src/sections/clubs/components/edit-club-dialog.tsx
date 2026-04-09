@@ -12,6 +12,10 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 import DialogContentText from '@mui/material/DialogContentText';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 
 import { useTRPC } from '@/trpc/client';
 
@@ -30,6 +34,7 @@ type EditClubDialogProps = {
 export function EditClubDialog({ open, club, onClose, onEdit, onError }: EditClubDialogProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [category, setCategory] = useState<'subject_oriented_clubs' | 'soft_skills_oriented_clubs'>('subject_oriented_clubs');
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
@@ -38,6 +43,7 @@ export function EditClubDialog({ open, club, onClose, onEdit, onError }: EditClu
     if (club) {
       setName(club.name);
       setDescription(club.description);
+      setCategory(club.category || 'subject_oriented_clubs');
     }
   }, [club]);
 
@@ -65,8 +71,9 @@ export function EditClubDialog({ open, club, onClose, onEdit, onError }: EditClu
       clubId: club.id,
       club_name: name.trim(),
       club_description: description.trim(),
+      category: category,
     });
-  }, [club, name, description, updateClubMutation]);
+  }, [club, name, description, category, updateClubMutation]);
 
   const handleClose = useCallback(() => {
     if (!updateClubMutation.isPending) {
@@ -91,6 +98,19 @@ export function EditClubDialog({ open, club, onClose, onEdit, onError }: EditClu
             required
             disabled={updateClubMutation.isPending}
           />
+          <FormControl fullWidth>
+            <InputLabel id="category-label">Category</InputLabel>
+            <Select
+              labelId="category-label"
+              value={category}
+              label="Category"
+              onChange={(e) => setCategory(e.target.value as 'subject_oriented_clubs' | 'soft_skills_oriented_clubs')}
+              disabled={updateClubMutation.isPending}
+            >
+              <MenuItem value="subject_oriented_clubs">Subject Oriented</MenuItem>
+              <MenuItem value="soft_skills_oriented_clubs">Soft Skills Oriented</MenuItem>
+            </Select>
+          </FormControl>
           <TextField
             fullWidth
             multiline

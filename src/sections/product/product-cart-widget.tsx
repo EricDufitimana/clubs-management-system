@@ -5,9 +5,9 @@ import type { BoxProps } from '@mui/material/Box';
 import Box from '@mui/material/Box';
 import Badge from '@mui/material/Badge';
 
-import { RouterLink } from 'src/routes/components';
+import { RouterLink } from '@/routes/components';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 
 // ----------------------------------------------------------------------
 

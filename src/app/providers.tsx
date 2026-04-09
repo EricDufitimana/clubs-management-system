@@ -2,9 +2,9 @@
 
 import { useEffect } from 'react';
 
-import { usePathname } from 'src/routes/hooks';
+import { usePathname } from '@/routes/hooks';
 
-import { ThemeProvider } from 'src/theme/theme-provider';
+import { ThemeProvider } from '@/theme/theme-provider';
 import { ClubProvider } from '@/contexts/club-context';
 
 // ----------------------------------------------------------------------

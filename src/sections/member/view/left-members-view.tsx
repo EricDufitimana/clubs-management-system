@@ -19,12 +19,12 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useUserRole } from 'src/hooks/use-user-role';
+import { useUserRole } from '@/hooks/use-user-role';
 import { useClubContext } from '@/contexts/club-context';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Scrollbar } from 'src/components/scrollbar';
+import { Scrollbar } from '@/components/scrollbar';
 
 import { TableNoData } from '../table-no-data';
 import { TableEmptyRows } from '../table-empty-rows';

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useMutation } from '@tanstack/react-query';
 
 import Box from '@mui/material/Box';
 import Avatar from '@mui/material/Avatar';
@@ -14,12 +15,48 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
+import { Label } from '@/components/label';
+import { Iconify } from '@/components/iconify';
+import { useTRPC } from '@/trpc/client';
 
-import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/member/utils/colors';
+import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/member/utils/colors';
+import { SelectClubDialog } from './select-club-dialog';
 
 // ----------------------------------------------------------------------
+function getCombinationAcronym(combination: string | null | undefined): string {
+  if (!combination || combination === '-') return '-';
+
+  if(combination.startsWith('Ey')){
+    return combination;
+  }
+  else if (combination.includes('-')) {
+    return combination
+      .split('-')
+      .map(part => part.trim().charAt(0).toUpperCase())
+      .join('');
+  }
+  
+  
+  const words = combination.split(/(?=[A-Z])/);
+  
+  const groupedWords: string[] = [];
+  for (let i = 0; i < words.length; i++) {
+    const currentWord = words[i];
+    const nextWord = words[i + 1];
+    
+    if (currentWord === 'Computer' && nextWord === 'Science') {
+      groupedWords.push('ComputerScience');
+      i++; 
+    } else {
+      groupedWords.push(currentWord);
+    }
+  }
+  
+  return groupedWords
+    .map(word => word.charAt(0).toUpperCase())
+    .join('');
+}
+
 
 export type UserProps = {
   id: string;
@@ -30,6 +67,9 @@ export type UserProps = {
   avatarUrl?: string;
   isVerified?: boolean;
   club_name?: string | null;
+  club_category?: 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null;
+  subject_oriented_club?: string | null;
+  soft_oriented_club?: string | null;
 };
 
 type MemberTableRowProps = {
@@ -37,22 +77,47 @@ type MemberTableRowProps = {
   selected: boolean;
   onSelectRow: () => void;
   onRemove?: () => void;
+  onDelete?: () => void;
   isSuperAdmin?: boolean;
+  showAllClubs?: boolean;
+  clubs?: Array<{ id: string; club_name: string }>;
 };
 
-export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAdmin = false }: MemberTableRowProps) {
+
+export function MemberTableRow({ row, selected, onSelectRow, onRemove, onDelete, isSuperAdmin = false, showAllClubs = false, clubs = [] }: MemberTableRowProps) {
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showSelectClubDialog, setShowSelectClubDialog] = useState(false);
+  
+  const trpc = useTRPC();
+
+  console.log("The Is Super Admin From the Member Table Row: ", isSuperAdmin);  
+  
+  // Mutation for marking member as left from specific club (super admin only)
+  const markAsLeftFromClubMutation = useMutation({
+    ...trpc.users.markMemberAsLeftFromClub.mutationOptions(),
+    onSuccess: () => {
+      setShowSelectClubDialog(false);
+      setOpenPopover(null);
+      if (onRemove) {
+        onRemove();
+      }
+    },
+    onError: (error: any) => {
+      console.error('Error marking member as left from club:', error);
+    },
+  });
 
   const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
     setOpenPopover(event.currentTarget);
   }, []);
 
   const handleClosePopover = useCallback(() => {
-    if (!isRemoving) {
+    if (!isRemoving && !isDeleting) {
       setOpenPopover(null);
     }
-  }, [isRemoving]);
+  }, [isRemoving, isDeleting]);
 
   const handleRemove = useCallback(async () => {
     if (!onRemove || isRemoving) return;
@@ -65,6 +130,39 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
       setOpenPopover(null);
     }
   }, [onRemove, isRemoving]);
+
+  const handleDelete = useCallback(async () => {
+    if (!onDelete || isDeleting) return;
+    
+    setIsDeleting(true);
+    try {
+      await onDelete();
+    } finally {
+      setIsDeleting(false);
+      setOpenPopover(null);
+    }
+  }, [onDelete, isDeleting]);
+
+  const handleSelectClubForRemoval = useCallback(() => {
+    setShowSelectClubDialog(true);
+  }, []);
+
+  const handleConfirmRemoveFromClub = useCallback((clubId: string) => {
+    markAsLeftFromClubMutation.mutate({
+      memberId: row.id,
+      clubId,
+    });
+  }, [row.id, markAsLeftFromClubMutation]);
+
+  // Find club IDs from club names
+  const getClubIdByName = (clubName: string | null | undefined): string | null => {
+    if (!clubName) return null;
+    const club = clubs.find(c => c.club_name === clubName);
+    return club?.id || null;
+  };
+
+  const subjectOrientedClubId = getClubIdByName(row.subject_oriented_club);
+  const softOrientedClubId = getClubIdByName(row.soft_oriented_club);
 
 
   return (
@@ -91,7 +189,12 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
           <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
             {row.company ? (
               <Label color={getCombinationColor(row.company)} variant="soft">
-                {formatCombination(row.company)}
+                {
+                  isSuperAdmin ?
+                  getCombinationAcronym(row.company)
+                  :
+                  formatCombination(row.company)
+                }
               </Label>
             ) : (
               '-'
@@ -115,24 +218,49 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
         </TableCell>
 
         {isSuperAdmin && (
-          <TableCell>
-            {row.club_name ? (
-              <Label color="default" variant="soft">
-                {row.club_name}
-              </Label>
+          <>
+            {showAllClubs ? (
+              <>
+                <TableCell>
+                  {row.subject_oriented_club ? (
+                    <Label color="primary" variant="soft">
+                      {row.subject_oriented_club}
+                    </Label>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      -
+                    </Typography>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {row.soft_oriented_club ? (
+                    <Label color="secondary" variant="soft">
+                      {row.soft_oriented_club}
+                    </Label>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      -
+                    </Typography>
+                  )}
+                </TableCell>
+              </>
             ) : (
-              <Typography variant="body2" color="text.secondary">
-                No Club
-              </Typography>
+              <TableCell>
+                {row.club_name ? (
+                  <Label color="default" variant="soft">
+                    {row.club_name}
+                  </Label>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    No Club
+                  </Typography>
+                )}
+              </TableCell>
             )}
-          </TableCell>
+          </>
         )}
 
-        <TableCell>
-          <Label color={(row.status === 'left' && 'error') || 'success'}>
-            {row.status === 'left' ? 'Left' : 'Active'}
-          </Label>
-        </TableCell>
+   
 
         <TableCell align="right">
           <IconButton onClick={handleOpenPopover}>
@@ -153,7 +281,7 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
           sx={{
             p: 0.5,
             gap: 0.5,
-            width: 140,
+            width: 180,
             display: 'flex',
             flexDirection: 'column',
             [`& .${menuItemClasses.root}`]: {
@@ -164,20 +292,65 @@ export function MemberTableRow({ row, selected, onSelectRow, onRemove, isSuperAd
             },
           }}
         >
-          {onRemove && (
-            <MenuItem 
-              onClick={handleRemove}
-              disabled={isRemoving}
-              sx={{ color: 'error.main' }}
-            >
-              {isRemoving ? (
-                <CircularProgress size={16} sx={{ mr: 1 }} />
-              ) : null}
-              {isRemoving ? 'Removing...' : 'Remove'}
-            </MenuItem>
+          {isSuperAdmin ? (
+              <>
+              {onRemove && (
+                <MenuItem 
+                  onClick={handleSelectClubForRemoval}
+                  disabled={markAsLeftFromClubMutation.isPending || isDeleting}
+                >
+                  {markAsLeftFromClubMutation.isPending ? (
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                  ) : null}
+                  {markAsLeftFromClubMutation.isPending ? 'Marking as left...' : 'Mark as Left'}
+                </MenuItem>
+              )}
+              {onDelete && (
+                <MenuItem 
+                  onClick={handleDelete}
+                  disabled={markAsLeftFromClubMutation.isPending || isDeleting}
+                  sx={{ color: 'error.main' }}
+                >
+                  {isDeleting ? (
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                  ) : null}
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </MenuItem>
+              )}
+            </>
+  
+          ) : (
+            <>
+              <MenuItem disabled sx={{ color: 'text.secondary' }}>
+                <Iconify icon="eva:lock-outline" sx={{ mr: 1 }} />
+                Super Admin View
+              </MenuItem>
+              <MenuItem disabled sx={{ fontSize: '0.75rem', color: 'text.disabled' }}>
+                Contact club admin to manage members
+              </MenuItem>
+            </>
+
           )}
         </MenuList>
       </Popover>
+
+      <SelectClubDialog
+        open={showSelectClubDialog}
+        onClose={() => setShowSelectClubDialog(false)}
+        onConfirm={handleConfirmRemoveFromClub}
+        memberName={row.name}
+        subjectOrientedClub={
+          row.subject_oriented_club && subjectOrientedClubId
+            ? { name: row.subject_oriented_club, id: subjectOrientedClubId }
+            : null
+        }
+        softOrientedClub={
+          row.soft_oriented_club && softOrientedClubId
+            ? { name: row.soft_oriented_club, id: softOrientedClubId }
+            : null
+        }
+        isLoading={markAsLeftFromClubMutation.isPending}
+      />
     </>
   );
 }

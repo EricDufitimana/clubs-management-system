@@ -13,13 +13,13 @@ import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useUserRole } from 'src/hooks/use-user-role';
+import { useUserRole } from '@/hooks/use-user-role';
 
-import { fDate } from 'src/utils/format-time';
+import { fDate } from '@/utils/format-time';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------

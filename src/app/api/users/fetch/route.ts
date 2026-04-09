@@ -2,9 +2,9 @@
 
 import { NextResponse } from 'next/server';
 
-import { getAvatarUrl } from 'src/utils/get-avatar';
+import { getAvatarUrl } from '@/utils/get-avatar';
 
-import { prisma } from 'src/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function GET(Request: Request) {
     try {

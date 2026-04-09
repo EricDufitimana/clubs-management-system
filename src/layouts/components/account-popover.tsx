@@ -18,10 +18,13 @@ import IconButton from '@mui/material/IconButton';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useRouter, usePathname } from 'src/routes/hooks';
+import { useRouter, usePathname } from '@/routes/hooks';
 
-import { useCurrentUser } from 'src/hooks/use-current-user';
+import { useCurrentUser } from '@/hooks/use-current-user';
 import { useTRPC } from '@/trpc/client';
+
+import { Iconify } from '@/components/iconify';
+import { ProfileAvatarDialog } from '@/sections/user/profile-avatar-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -42,6 +45,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
   const queryClient = useQueryClient();
 
   const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
+  const [openProfile, setOpenProfile] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false,
     message: '',
@@ -54,6 +58,15 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
 
   const handleClosePopover = useCallback(() => {
     setOpenPopover(null);
+  }, []);
+
+  const handleOpenProfile = useCallback(() => {
+    handleClosePopover();
+    setOpenProfile(true);
+  }, [handleClosePopover]);
+
+  const handleCloseProfile = useCallback(() => {
+    setOpenProfile(false);
   }, []);
 
   const handleClickItem = useCallback(
@@ -98,7 +111,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
           width: 40,
           height: 40,
           background: (theme) =>
-            `conic-gradient(${theme.vars.palette.primary.light}, ${theme.vars.palette.warning.light}, ${theme.vars.palette.primary.light})`,
+            `conic-gradient(${theme.vars?.palette?.primary?.light || theme.palette.primary.light}, ${theme.vars?.palette?.warning?.light || theme.palette.warning.light}, ${theme.vars?.palette?.primary?.light || theme.palette.primary.light})`,
           ...sx,
         }}
         {...other}
@@ -181,6 +194,11 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
               {option.label}
             </MenuItem>
           ))}
+
+          <MenuItem onClick={handleOpenProfile}>
+            <Iconify icon="solar:user-id-bold-duotone" width={22} />
+            Profile
+          </MenuItem>
         </MenuList>
 
         <Divider sx={{ borderStyle: 'dashed' }} />
@@ -199,6 +217,8 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
           </Button>
         </Box>
       </Popover>
+
+      <ProfileAvatarDialog open={openProfile} onClose={handleCloseProfile} />
 
       <Snackbar
         open={snackbar.open}

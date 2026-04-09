@@ -92,7 +92,7 @@ export const studentsRouter = createTRPCRouter({
 
         return {
           success: true,
-          message: 'Member removed successfully',
+          message: 'Member marked as left successfully',
         };
       } catch (error: any) {
         console.error('[STUDENTS] Error removing student:', error);
@@ -104,6 +104,156 @@ export const studentsRouter = createTRPCRouter({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error?.message || 'Failed to remove member',
+        });
+      }
+    }),
+
+  /**
+   * Delete a member entirely from a club (hard delete)
+   */
+  deleteMember: adminProcedure
+    .input(
+      z.object({
+        studentId: z.string(),
+        clubId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const { studentId, clubId } = input;
+        const { user, clubIds } = ctx;
+
+        if (!user) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'User not found',
+          });
+        }
+
+        // Determine target club ID
+        let targetClubId: bigint;
+
+        if (clubId) {
+          targetClubId = BigInt(clubId);
+          // Verify user has access to this club
+          if (!clubIds.includes(targetClubId)) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'You do not have permission to delete members from this club',
+            });
+          }
+        } else {
+          // If no clubId provided, use the first club the user leads
+          if (clubIds.length === 0) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'You are not a leader of any club',
+            });
+          }
+          targetClubId = clubIds[0];
+        }
+
+        // Delete the membership record entirely
+        await prisma.clubMember.deleteMany({
+          where: {
+            student_id: BigInt(studentId),
+            club_id: targetClubId,
+          },
+        });
+
+        return {
+          success: true,
+          message: 'Member deleted successfully',
+        };
+      } catch (error: any) {
+        console.error('[STUDENTS] Error deleting member:', error);
+        
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error?.message || 'Failed to delete member',
+        });
+      }
+    }),
+
+  /**
+   * Delete multiple members from a club (bulk delete)
+   */
+  deleteMultipleMembers: adminProcedure
+    .input(
+      z.object({
+        studentIds: z.array(z.string()),
+        clubId: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const { studentIds, clubId } = input;
+        const { user, clubIds } = ctx;
+
+        if (!user) {
+          throw new TRPCError({
+            code: 'UNAUTHORIZED',
+            message: 'User not found',
+          });
+        }
+
+        if (studentIds.length === 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'No student IDs provided',
+          });
+        }
+
+        // Determine target club ID
+        let targetClubId: bigint;
+
+        if (clubId) {
+          targetClubId = BigInt(clubId);
+          // Verify user has access to this club
+          if (!clubIds.includes(targetClubId)) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'You do not have permission to delete members from this club',
+            });
+          }
+        } else {
+          // If no clubId provided, use the first club the user leads
+          if (clubIds.length === 0) {
+            throw new TRPCError({
+              code: 'FORBIDDEN',
+              message: 'You are not a leader of any club',
+            });
+          }
+          targetClubId = clubIds[0];
+        }
+
+        // Delete multiple membership records entirely
+        const result = await prisma.clubMember.deleteMany({
+          where: {
+            student_id: { in: studentIds.map(id => BigInt(id)) },
+            club_id: targetClubId,
+          },
+        });
+
+        return {
+          success: true,
+          message: `${result.count} members deleted successfully`,
+          deletedCount: result.count,
+        };
+      } catch (error: any) {
+        console.error('[STUDENTS] Error deleting multiple members:', error);
+        
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error?.message || 'Failed to delete members',
         });
       }
     }),

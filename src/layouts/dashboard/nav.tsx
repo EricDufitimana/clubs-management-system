@@ -11,12 +11,12 @@ import { useTheme } from '@mui/material/styles';
 import ListItemButton from '@mui/material/ListItemButton';
 import Drawer, { drawerClasses } from '@mui/material/Drawer';
 
-import { usePathname } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
+import { usePathname } from '@/routes/hooks';
+import { RouterLink } from '@/routes/components';
 
-import { Logo } from 'src/components/logo';
-import { Scrollbar } from 'src/components/scrollbar';
-import { ClubSelector } from '@/components/club-selector/club-selector';
+import { CmsLogo } from '@/components/logo';
+import { Scrollbar } from '@/components/scrollbar';
+import { ClubSelector } from '@/components/club-selector';
 
 import { WorkspacesPopover } from '../components/workspaces-popover';
 
@@ -156,7 +156,7 @@ export function NavContent({ data, slots, workspaces, sx }: NavContentProps) {
 
   return (
     <>
-      <Logo />
+      <CmsLogo />
 
       {slots?.topArea}
 

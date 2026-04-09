@@ -21,14 +21,14 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useUserRole } from 'src/hooks/use-user-role';
-import { useClubContext } from 'src/contexts/club-context';
+import { useUserRole } from '@/hooks/use-user-role';
+import { useClubContext } from '@/contexts/club-context';
 
-import { fDate } from 'src/utils/format-time';
+import { fDate } from '@/utils/format-time';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
@@ -153,6 +153,12 @@ export function SessionsView() {
       date: dateISO,
     });
   }, [formData, currentUserClubId, createSessionMutation]);
+
+  const handleDeleteSession = useCallback((sessionId: string) => {
+    if (window.confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+      deleteSessionMutation.mutate({ sessionId });
+    }
+  }, [deleteSessionMutation]);
 
   const handleCloseSnackbar = useCallback(() => {
     setSnackbar((prev) => ({ ...prev, open: false }));
@@ -304,11 +310,28 @@ export function SessionsView() {
                                 >
                                   <Iconify icon="solar:pen-bold" width={18} />
                                 </IconButton>
-                                <Iconify
+
+                                {/* <Iconify
                                   icon="solar:calendar-mark-bold-duotone"
                                   width={24}
                                   sx={{ color: `${color}.main` }}
-                                />
+                                /> */}
+                                <IconButton
+                                  size="small"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteSession(session.id);
+                                  }}
+                                  sx={{ 
+                                    color: 'error.main',
+                                    '&:hover': {
+                                      bgcolor: alpha(theme.palette.error.main, 0.08),
+                                    },
+                                  }}
+                                  disabled={deleteSessionMutation.isPending}
+                                >
+                                  <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                                </IconButton>
                               </Box>
                             </Box>
 

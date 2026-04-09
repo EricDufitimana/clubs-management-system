@@ -14,6 +14,7 @@ export const clubsRouter = createTRPCRouter({
         id: club.id.toString(),
         club_name: club.club_name,
         club_description: club.club_description,
+        category: club.category,
         status: club.status,
       }));
     } catch (error: any) {
@@ -34,13 +35,25 @@ export const clubsRouter = createTRPCRouter({
         orderBy: {
           created_at: 'desc',
         },
+        include: {
+          members: {
+            where: {
+              membership_status: 'active',
+            },
+            select: {
+              id: true,
+            },
+          },
+        },
       });
 
       return clubs.map((club) => ({
         id: club.id.toString(),
         club_name: club.club_name,
         club_description: club.club_description,
+        category: club.category,
         status: club.status,
+        member_count: club.members.length,
         created_at: club.created_at.toISOString(),
       }));
     } catch (error: any) {
@@ -104,16 +117,18 @@ export const clubsRouter = createTRPCRouter({
       z.object({
         club_name: z.string().min(1, 'Club name is required'),
         club_description: z.string().min(1, 'Club description is required'),
+        category: z.enum(['subject_oriented_clubs', 'soft_skills_oriented_clubs']).default('subject_oriented_clubs'),
       })
     )
     .mutation(async ({ input, ctx }) => {
       try {
-        const { club_name, club_description } = input;
+        const { club_name, club_description, category } = input;
 
         const club = await prisma.club.create({
           data: {
             club_name,
             club_description,
+            category: category as any,
             status: 'active',
             created_by: ctx.user.auth_user_id,
           },
@@ -123,6 +138,7 @@ export const clubsRouter = createTRPCRouter({
           id: club.id.toString(),
           club_name: club.club_name,
           club_description: club.club_description,
+          category: club.category,
           status: club.status,
         };
       } catch (error: any) {
@@ -143,17 +159,19 @@ export const clubsRouter = createTRPCRouter({
         clubId: z.string(),
         club_name: z.string().min(1, 'Club name is required'),
         club_description: z.string().min(1, 'Club description is required'),
+        category: z.enum(['subject_oriented_clubs', 'soft_skills_oriented_clubs']).default('subject_oriented_clubs'),
       })
     )
     .mutation(async ({ input }) => {
       try {
-        const { clubId, club_name, club_description } = input;
+        const { clubId, club_name, club_description, category } = input;
 
         const club = await prisma.club.update({
           where: { id: BigInt(clubId) },
           data: {
             club_name,
             club_description,
+            category: category as any,
           },
         });
 
@@ -161,6 +179,7 @@ export const clubsRouter = createTRPCRouter({
           id: club.id.toString(),
           club_name: club.club_name,
           club_description: club.club_description,
+          category: club.category,
           status: club.status,
         };
       } catch (error: any) {
@@ -377,6 +396,97 @@ export const clubsRouter = createTRPCRouter({
           });
         }
 
+        // Check for Senior 6 students and exclude them
+        const senior6Students = await prisma.student.findMany({
+          where: {
+            id: { in: newStudentIds.map(id => BigInt(id)) },
+            grade: 'Senior6',
+          },
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+          },
+        });
+
+        if (senior6Students.length > 0) {
+          const senior6Names = senior6Students.map(s => `${s.first_name} ${s.last_name}`).join(', ');
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Cannot add Senior 6 students to clubs: ${senior6Names}. Senior 6 students are not allowed to join clubs.`,
+          });
+        }
+
+        // Get target club details to check category
+        const targetClub = await prisma.club.findUnique({
+          where: { id: targetClubId },
+          select: { category: true }
+        });
+
+        if (!targetClub) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Target club not found',
+          });
+        }
+      const studentClubRestrictions = await prisma.$queryRaw<Array<{
+        student_id: bigint;
+        existing_clubs_count: bigint;
+        subject_oriented_count: bigint;
+        soft_skills_oriented_count: bigint;
+      }>>`
+        SELECT 
+          cm.student_id,
+          COUNT(cm.club_id) as existing_clubs_count,
+          COUNT(CASE WHEN c.category = 'subject_oriented_clubs' THEN 1 END) as subject_oriented_count,
+          COUNT(CASE WHEN c.category = 'soft_skills_oriented_clubs' THEN 1 END) as soft_skills_oriented_count
+        FROM "club-members" cm
+        JOIN clubs c ON cm.club_id = c.id
+        WHERE cm.student_id = ANY(${newStudentIds.map(id => BigInt(id))})
+          AND cm.membership_status = 'active'
+        GROUP BY cm.student_id
+      `;
+
+        const restrictedStudents: string[] = [];
+        
+      for (const student of newStudentIds) {
+        const restriction = studentClubRestrictions.find(r => r.student_id.toString() === student);
+        
+        if (restriction) {
+          const targetCategory = targetClub.category;
+          
+          // Convert bigint to number for comparison
+          const existingCount = Number(restriction.existing_clubs_count);
+          const subjectCount = Number(restriction.subject_oriented_count);
+          const softSkillsCount = Number(restriction.soft_skills_oriented_count);
+          
+          // If student already has 2 clubs, restrict
+          if (existingCount >= 2) {
+            restrictedStudents.push(student);
+            continue;
+          }
+          
+          // If target club is subject oriented and student already has one, restrict
+          if (targetCategory === 'subject_oriented_clubs' && subjectCount >= 1) {
+            restrictedStudents.push(student);
+            continue;
+          }
+          
+          // If target club is soft skills oriented and student already has one, restrict
+          if (targetCategory === 'soft_skills_oriented_clubs' && softSkillsCount >= 1) {
+            restrictedStudents.push(student);
+            continue;
+          }
+        }
+      }
+
+        if (restrictedStudents.length > 0) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `Cannot add ${restrictedStudents.length} student(s) due to club membership restrictions. Students can only join maximum 2 clubs (1 subject-oriented + 1 soft skills-oriented).`,
+          });
+        }
+
         // Add new members
         await prisma.clubMember.createMany({
           data: newStudentIds.map((studentId) => ({
@@ -410,5 +520,77 @@ export const clubsRouter = createTRPCRouter({
         });
       }
     }),
+
+  /**
+   * Get students who are in multiple clubs
+   */
+  getStudentsInMultipleClubs: superAdminProcedure.query(async () => {
+    try {
+      const studentsInMultipleClubs = await prisma.$queryRaw<Array<{
+        student_id: bigint;
+        student_name: string;
+        grade: string;
+        combination: string;
+        gender: string;
+        club_count: bigint;
+        clubs: Array<{
+          club_id: bigint;
+          club_name: string;
+          club_category: string;
+          membership_status: string;
+          joined_at: string; // Changed from Date to string
+        }>;
+      }>>`
+        SELECT 
+          s.id as student_id,
+          s.first_name || ' ' || s.last_name as student_name,
+          s.grade::text as grade,
+          s.combination::text as combination,
+          s.gender::text as gender,
+          COUNT(cm.club_id) as club_count,
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'club_id', c.id,
+              'club_name', c.club_name,
+              'club_category', c.category::text,
+              'membership_status', cm.membership_status::text,
+              'joined_at', cm.joined_at
+            ) ORDER BY cm.joined_at DESC
+          ) as clubs
+        FROM students s
+        JOIN "club-members" cm ON s.id = cm.student_id
+        JOIN clubs c ON cm.club_id = c.id
+        WHERE cm.membership_status = 'active'
+        GROUP BY s.id, s.first_name, s.last_name, s.grade, s.combination, s.gender
+        HAVING 
+          COUNT(CASE WHEN c.category = 'subject_oriented_clubs' THEN 1 END) > 1 
+          OR 
+          COUNT(CASE WHEN c.category = 'soft_skills_oriented_clubs' THEN 1 END) > 1
+        ORDER BY student_name ASC
+      `;
+      
+      return studentsInMultipleClubs.map(student => ({
+        studentId: student.student_id.toString(),
+        studentName: student.student_name,
+        grade: student.grade,
+        combination: student.combination,
+        gender: student.gender,
+        clubCount: Number(student.club_count),
+        clubs: student.clubs.map(club => ({
+          clubId: club.club_id.toString(),
+          clubName: club.club_name,
+          clubCategory: club.club_category,
+          membershipStatus: club.membership_status,
+          joinedAt: club.joined_at, // Just use the string directly
+        })),
+      }));
+    } catch (error: any) {
+      console.error('[CLUBS] Error fetching students in multiple clubs:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error?.message || 'Failed to fetch students in multiple clubs',
+      });
+    }
+  }),
 });
 

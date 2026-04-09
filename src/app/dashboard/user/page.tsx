@@ -1,9 +1,12 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
 
-import { CONFIG } from 'src/config-global';
-import { trpc, getQueryClient } from 'src/trpc/server';
+import { CONFIG } from '@/config-global';
+import { trpc, getQueryClient } from '@/trpc/server';
 
-import { UserView } from 'src/sections/user/view';
+import { PageLoading } from '@/components/shared/page-loading';
+import { UserView } from '@/sections/user/view';
 
 // ----------------------------------------------------------------------
 
@@ -29,5 +32,11 @@ export default async function Page() {
   // Prefetch all students for Add Members dialog
   await queryClient.prefetchQuery(trpc.students.getAllStudents.queryOptions());
   
-  return <UserView />;
+  return (
+    <HydrationBoundary state={dehydrate(queryClient)}>
+      <Suspense fallback={<PageLoading />}>
+        <UserView />
+      </Suspense>
+    </HydrationBoundary>
+  );
 }

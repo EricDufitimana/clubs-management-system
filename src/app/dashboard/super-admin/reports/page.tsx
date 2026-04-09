@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 
-import { CONFIG } from 'src/config-global';
+import { CONFIG } from '@/config-global';
 
-import { SuperAdminReportsView } from 'src/sections/super-admin/view/super-admin-reports-view';
+import { SuperAdminReportsView } from '@/sections/super-admin/view/super-admin-reports-view';
 
 // ----------------------------------------------------------------------
 

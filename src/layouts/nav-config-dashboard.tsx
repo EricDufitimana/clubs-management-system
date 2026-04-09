@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react';
 
-import { SvgColor } from 'src/components/svg-color';
+import { SvgColor } from '@/components/svg-color';
 
 // ----------------------------------------------------------------------
 
@@ -54,6 +54,11 @@ export const superAdminNavItems: NavItem[] = [
     title: 'Members',
     path: '/dashboard/super-admin/members',
     icon: icon('ic-user'),
+  },
+  {
+    title: 'Left Members',
+    path: '/dashboard/super-admin/left-members',
+    icon: <Icon icon="solar:logout-3-bold-duotone" width={24} height={24} />,
   },
   {
     title: 'Reports',

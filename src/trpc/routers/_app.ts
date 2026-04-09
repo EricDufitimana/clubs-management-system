@@ -7,8 +7,13 @@ import { clubsRouter } from './clubs';
 import { studentsRouter } from './students';
 import { attendanceRouter } from './attendance';
 import { sessionsRouter } from './sessions';
+import { inngestRouter } from './inngest';
+import { contactRouter } from './contact';
+import { superAdminInvitesRouter } from './superAdminInvites';
+import { waitlistRouter } from './waitlist';
 
 export const appRouter = createTRPCRouter({
+  inngest: inngestRouter,
   auth: authRouter,
   dashboard: dashboardRouter,
   users: usersRouter,
@@ -16,6 +21,9 @@ export const appRouter = createTRPCRouter({
   students: studentsRouter,
   attendance: attendanceRouter,
   sessions: sessionsRouter,
+  contact: contactRouter,
+  superAdminInvites: superAdminInvitesRouter,
+  waitlist: waitlistRouter,
 });
 
 // export type definition of API

@@ -14,11 +14,11 @@ import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useRouter } from 'src/routes/hooks';
+import { useRouter } from '@/routes/hooks';
 
-import { signup } from 'src/actions/login';
+import { signup } from '@/actions/login';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 
 // ----------------------------------------------------------------------
 

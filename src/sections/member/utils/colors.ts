@@ -1,4 +1,4 @@
-import type { LabelColor } from 'src/components/label/types';
+import type { LabelColor } from '@/components/types';
 
 // ----------------------------------------------------------------------
 

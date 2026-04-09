@@ -8,9 +8,9 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import Pagination from '@mui/material/Pagination';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 
 import { PostItem } from '../post-item';
 import { PostSort } from '../post-sort';

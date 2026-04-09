@@ -71,23 +71,13 @@ export async function acceptInvite(token: string) {
     }
 
     // Create club leader record
-    // Map custom position title to ClubLeaderRole enum
-    // Default to 'president' if no role specified or if it's a custom title
-    const roleMapping: Record<string, 'president' | 'vice_president' | 'secretary'> = {
-      'president': 'president',
-      'vice president': 'vice_president',
-      'vice-president': 'vice_president',
-      'secretary': 'secretary',
-    };
-    
-    const normalizedRole = invite.role?.toLowerCase() || '';
-    const mappedRole = roleMapping[normalizedRole] || 'president';
+    const role = invite.role || 'Member';
     
     await prisma.clubLeader.create({
       data: {
         club_id: invite.club_id,
         user_id: dbUser.id,
-        role: mappedRole,
+        role: role,
         created_at: new Date(),
       }
     });

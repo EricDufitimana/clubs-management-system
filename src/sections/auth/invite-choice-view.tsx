@@ -12,9 +12,9 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import { alpha } from '@mui/material/styles';
 
-import { useRouter } from 'src/routes/hooks';
-import { validateInvite } from 'src/actions/validateInvite';
-import { Iconify } from 'src/components/iconify';
+import { useRouter } from '@/routes/hooks';
+import { validateInvite } from '@/actions/validateInvite';
+import { Iconify } from '@/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -77,7 +77,7 @@ export function InviteChoiceView({ token }: InviteChoiceViewProps) {
 
   const handleExistingUser = () => {
     // Redirect to sign-in with return URL to assignment page
-    router.push(`/sign-in?redirect=/join-club/${token}/assign`);
+    router.push(`/join-club/${token}/assign`);
   };
 
   if (loading) {
@@ -211,7 +211,15 @@ export function InviteChoiceView({ token }: InviteChoiceViewProps) {
                 variant="contained"
                 onClick={handleNewUser}
                 startIcon={<Iconify icon="solar:user-plus-bold" width={22} />}
-                sx={{ py: 1.5 }}
+                sx={{ 
+                  py: 1.5,
+                  px: 2,
+                  minHeight: 56,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                }}
               >
                 I'm a New User
               </Button>
@@ -222,7 +230,19 @@ export function InviteChoiceView({ token }: InviteChoiceViewProps) {
                 variant="outlined"
                 onClick={handleExistingUser}
                 startIcon={<Iconify icon="solar:login-3-bold" width={22} />}
-                sx={{ py: 1.5 }}
+                sx={{ 
+                  py: 1.5,
+                  px: 2,
+                  minHeight: 56,
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  borderWidth: 2,
+                  '&:hover': {
+                    borderWidth: 2,
+                  }
+                }}
               >
                 I Already Have an Account
               </Button>

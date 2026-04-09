@@ -8,7 +8,7 @@ import { useScrollOffsetTop } from 'minimal-shared/hooks';
 import { varAlpha, mergeClasses } from 'minimal-shared/utils';
 
 import AppBar from '@mui/material/AppBar';
-import { styled } from '@mui/material/styles';
+import { styled, alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 
 import { layoutClasses } from './classes';
@@ -55,7 +55,7 @@ export function HeaderSection({
       sx={[
         (theme) => ({
           ...(isOffset && {
-            '--color': `var(--offset-color, ${theme.vars.palette.text.primary})`,
+            '--color': `var(--offset-color, ${theme.vars?.palette?.text?.primary || theme.palette.text.primary})`,
           }),
         }),
         ...(Array.isArray(sx) ? sx : [sx]),
@@ -109,7 +109,9 @@ const HeaderRoot = styled(AppBar, {
     zIndex: pauseZindex.top,
     backdropFilter: `blur(6px)`,
     WebkitBackdropFilter: `blur(6px)`,
-    backgroundColor: varAlpha(theme.vars.palette.background.defaultChannel, 0.8),
+    backgroundColor: theme.vars?.palette?.background?.defaultChannel
+      ? varAlpha(theme.vars.palette.background.defaultChannel, 0.8)
+      : alpha(theme.palette.background.default, 0.8),
     ...(isOffset && {
       opacity: 1,
       visibility: 'visible',
@@ -126,7 +128,7 @@ const HeaderRoot = styled(AppBar, {
     borderRadius: '50%',
     width: `calc(100% - 48px)`,
     zIndex: pauseZindex.bottom,
-    boxShadow: theme.vars.customShadows.z8,
+    boxShadow: theme.vars?.customShadows?.z8 || theme.shadows[8],
     ...(isOffset && { opacity: 0.48, visibility: 'visible' }),
   };
 

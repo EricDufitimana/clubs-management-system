@@ -15,6 +15,7 @@ type Club = {
   club_name: string;
   club_description: string;
   status: 'active' | 'terminated';
+  category: 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null;
 };
 
 type Context = {
@@ -48,6 +49,22 @@ export const createTRPCContext = cache(async (): Promise<Context> => {
       },
     });
 
+    // Debug: Check if there are multiple users with same auth_user_id
+    const allUsersWithSameAuth = await prisma.user.findMany({
+      where: { auth_user_id: authUser.id },
+      select: {
+        id: true,
+        auth_user_id: true,
+        first_name: true,
+        last_name: true,
+        role: true,
+      },
+    });
+    
+    console.log('[TRPC_CONTEXT] Auth user ID:', authUser.id);
+    console.log('[TRPC_CONTEXT] All users with this auth_user_id:', allUsersWithSameAuth);
+    console.log('[TRPC_CONTEXT] Selected dbUser:', dbUser);
+
     if (!dbUser) {
       return { user: null, role: null, clubs: [], clubIds: [] };
     }
@@ -64,8 +81,9 @@ export const createTRPCContext = cache(async (): Promise<Context> => {
         club_name: string;
         club_description: string;
         status: string;
+        category: string;
       }>>`
-        SELECT id, club_name, club_description, status::text as status
+        SELECT id, club_name, club_description, status::text as status, category::text as category
         FROM clubs
         WHERE status = 'active'
         ORDER BY club_name ASC
@@ -75,30 +93,60 @@ export const createTRPCContext = cache(async (): Promise<Context> => {
         club_name: c.club_name,
         club_description: c.club_description,
         status: c.status as 'active' | 'terminated',
+        category: c.category as 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null,
       }));
       clubIds = clubs.map(c => c.id);
     } else if (role === 'admin') {
       // Admin gets only clubs where they are a leader
+      console.log('[TRPC_CONTEXT] Admin user detected, fetching clubs for user ID:', dbUser.id);
+      console.log('[TRPC_CONTEXT] User ID type:', typeof dbUser.id, 'value:', dbUser.id.toString());
+      
+      // First check what clubs this user is leader of, regardless of status
+      const userClubsWithStatus = await prisma.$queryRaw<Array<{
+        club_id: bigint;
+        club_name: string;
+        club_status: string;
+        leader_role: string;
+      }>>`
+        SELECT cl.club_id, c.club_name, c.status as club_status, cl.role as leader_role
+        FROM club_leaders cl
+        JOIN clubs c ON cl.club_id = c.id
+        WHERE cl.user_id = ${dbUser.id}::bigint
+        ORDER BY c.club_name ASC
+      `;
+      
+      console.log('[TRPC_CONTEXT] User clubs with status:', userClubsWithStatus);
+      
+      // Now filter for active clubs only
       const userClubs = await prisma.$queryRaw<Array<{
         id: bigint;
         club_name: string;
         club_description: string;
         status: string;
+        category: string;
       }>>`
-        SELECT c.id, c.club_name, c.club_description, c.status::text as status
+        SELECT c.id, c.club_name, c.club_description, c.status::text as status, c.category::text as category
         FROM club_leaders cl
         JOIN clubs c ON cl.club_id = c.id
         WHERE cl.user_id = ${dbUser.id}::bigint
           AND c.status = 'active'
         ORDER BY c.club_name ASC
       `;
+      
+      console.log('[TRPC_CONTEXT] Raw SQL result (active only):', userClubs);
+      console.log('[TRPC_CONTEXT] Number of clubs found:', userClubs.length);
+      
       clubs = userClubs.map(c => ({
         id: c.id,
         club_name: c.club_name,
         club_description: c.club_description,
         status: c.status as 'active' | 'terminated',
+        category: c.category as 'subject_oriented_clubs' | 'soft_skills_oriented_clubs' | null,
       }));
       clubIds = clubs.map(c => c.id);
+      
+      console.log('[TRPC_CONTEXT] Processed clubs:', clubs);
+      console.log('[TRPC_CONTEXT] Club IDs:', clubIds);
     }
 
     return {

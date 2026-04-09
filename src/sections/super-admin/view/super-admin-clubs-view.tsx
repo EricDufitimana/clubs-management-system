@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClubProps } from 'src/sections/clubs/club-table-row';
+import type { ClubProps } from '@/sections/clubs/club-table-row';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -19,21 +19,22 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { Iconify } from '@/components/iconify';
+import { Scrollbar } from '@/components/scrollbar';
 import { useTRPC } from '@/trpc/client';
 
-import { TableNoData } from 'src/sections/clubs/table-no-data';
-import { ClubTableRow } from 'src/sections/clubs/club-table-row';
-import { ClubTableHead } from 'src/sections/clubs/club-table-head';
-import { TableEmptyRows } from 'src/sections/clubs/table-empty-rows';
-import { ClubsTableToolbar } from 'src/sections/clubs/clubs-table-toolbar';
-import { AddClubDialog } from 'src/sections/clubs/components/add-club-dialog';
-import { EditClubDialog } from 'src/sections/clubs/components/edit-club-dialog';
-import { emptyRows, applyFilter, getComparator } from 'src/sections/clubs/utils';
-import { InviteOfficersDialog } from 'src/sections/clubs/components/invite-officers-dialog';
+import { TableNoData } from '@/sections/clubs/table-no-data';
+import { ClubTableRow } from '@/sections/clubs/club-table-row';
+import { ClubTableHead } from '@/sections/clubs/club-table-head';
+import { TableEmptyRows } from '@/sections/clubs/table-empty-rows';
+import { ClubsTableToolbar } from '@/sections/clubs/clubs-table-toolbar';
+import { AddClubDialog } from '@/sections/clubs/components/add-club-dialog';
+import { EditClubDialog } from '@/sections/clubs/components/edit-club-dialog';
+import { emptyRows, applyFilter, getComparator } from '@/sections/clubs/utils';
+import { InviteOfficersDialog } from '@/sections/clubs/components/invite-officers-dialog';
+import { InviteSuperAdminDialog } from '@/components/super-admin/invite-super-admin-dialog';
 
 import { useTable } from './use-table';
 
@@ -47,6 +48,7 @@ export function SuperAdminClubsView() {
   const [openDialog, setOpenDialog] = useState(false);
   const [openEditDialog, setOpenEditDialog] = useState(false);
   const [openInviteDialog, setOpenInviteDialog] = useState(false);
+  const [openSuperAdminInviteDialog, setOpenSuperAdminInviteDialog] = useState(false);
   const [selectedClub, setSelectedClub] = useState<ClubProps | null>(null);
   const [selectedClubForInvite, setSelectedClubForInvite] = useState<{id: string; name: string} | null>(null);
   const [filterName, setFilterName] = useState('');
@@ -151,7 +153,8 @@ export function SuperAdminClubsView() {
         id: club.id,
         name: club.club_name,
         description: club.club_description,
-        members: 0,
+        category: club.category || null,
+        members: club.member_count || 0,
         status: club.status === 'terminated' ? 'inactive' : club.status,
       }));
       setClubs(mappedClubs);
@@ -241,6 +244,22 @@ export function SuperAdminClubsView() {
     setSelectedClubForInvite(null);
   }, []);
 
+  const handleOpenSuperAdminInviteDialog = useCallback(() => {
+    setOpenSuperAdminInviteDialog(true);
+  }, []);
+
+  const handleCloseSuperAdminInviteDialog = useCallback(() => {
+    setOpenSuperAdminInviteDialog(false);
+  }, []);
+
+  const handleSuperAdminInviteSuccess = useCallback(() => {
+    setSnackbar({
+      open: true,
+      message: 'Super admin invitation sent successfully!',
+      severity: 'success'
+    });
+  }, []);
+
   const handleInviteSuccess = useCallback(() => {
     setSnackbar({
       open: true,
@@ -266,6 +285,15 @@ export function SuperAdminClubsView() {
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           Club Management
         </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<Iconify icon="mingcute:user-add-line" />}
+          onClick={handleOpenSuperAdminInviteDialog}
+          sx={{ mr: 2 }}
+        >
+          Add New Super Admin
+        </Button>
         <Button
           variant="contained"
           color="inherit"
@@ -304,6 +332,7 @@ export function SuperAdminClubsView() {
                 headLabel={[
                   { id: 'name', label: 'Club Name' },
                   { id: 'description', label: 'Description' },
+                  { id: 'category', label: 'Category' },
                   { id: 'members', label: 'Members', align: 'center' },
                   { id: 'status', label: 'Status' },
                   { id: '' },
@@ -312,7 +341,7 @@ export function SuperAdminClubsView() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} align="center">
+                    <TableCell colSpan={6} align="center">
                       <CircularProgress />
                     </TableCell>
                   </TableRow>
@@ -368,6 +397,13 @@ export function SuperAdminClubsView() {
         clubName={selectedClubForInvite?.name}
         onClose={handleCloseInviteDialog}
         onSuccess={handleInviteSuccess}
+        onError={handleError}
+      />
+      
+      <InviteSuperAdminDialog
+        open={openSuperAdminInviteDialog}
+        onClose={handleCloseSuperAdminInviteDialog}
+        onSuccess={handleSuperAdminInviteSuccess}
         onError={handleError}
       />
       

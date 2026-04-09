@@ -24,16 +24,16 @@ import MenuItem from '@mui/material/MenuItem';
 import TablePagination from '@mui/material/TablePagination';
 import Chip from '@mui/material/Chip';
 
-import { useUserRole } from 'src/hooks/use-user-role';
-import { useClubContext } from 'src/contexts/club-context';
+import { useUserRole } from '@/hooks/use-user-role';
+import { useClubContext } from '@/contexts/club-context';
 
-import { fDate } from 'src/utils/format-time';
+import { fDate } from '@/utils/format-time';
 
-import { DashboardContent } from 'src/layouts/dashboard';
+import { DashboardContent } from '@/layouts/dashboard';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
+import { Label } from '@/components/label';
+import { Iconify } from '@/components/iconify';
+import { Scrollbar } from '@/components/scrollbar';
 import { useTRPC } from '@/trpc/client';
 
 import { RecordAttendanceDialog } from '../components/record-attendance-dialog';
@@ -203,15 +203,16 @@ export function AttendanceView({ sessionId }: AttendanceViewProps = {} as Attend
 
   // Get unique sessions for filter dropdown
   const sessionOptions = useMemo(() => {
+    // Use sessions data instead of attendance records to ensure we only show sessions from selected club
     const uniqueSessions = Array.from(
-      new Map(attendanceRecords.map(r => [r.session_id, { id: r.session_id, name: r.session_name, date: r.session_date }])).values()
+      new Map(sessions.map(s => [s.id, { id: s.id, name: `${s.notes} - ${fDate(s.date, 'DD MMM YYYY')}`, date: s.date }])).values()
     ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
     return [
       { id: 'all', name: 'All Sessions' },
       ...uniqueSessions,
     ];
-  }, [attendanceRecords]);
+  }, [sessions]);
 
   const handleChangePage = useCallback((_: unknown, newPage: number) => {
     setPage(newPage);

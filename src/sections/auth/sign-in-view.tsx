@@ -2,25 +2,24 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { useRouter } from 'src/routes/hooks';
+import { useRouter } from '@/routes/hooks';
 import { useSearchParams } from 'next/navigation';
 
-import { login } from 'src/actions/login';
+import { login } from '@/actions/login';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 import { useTRPC } from '@/trpc/client';
 
 // ----------------------------------------------------------------------
@@ -31,34 +30,37 @@ export function SignInView() {
   const redirectUrl = searchParams.get('redirect');
 
   const [showPassword, setShowPassword] = useState(false);
-  const [snackbar, setSnackbar] = useState<{open: boolean; message: string; severity: 'success' | 'error'}>({
-    open: false,
-    message: '',
-    severity: 'error'
-  });
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   const trpc = useTRPC();
   const loginMutation = useMutation({
     ...trpc.auth.login.mutationOptions(),
     onSuccess: (data) => {
-      setSnackbar({
-        open: true,
-        message: 'Login successful',
-        severity: 'success'
-      });
+      toast.success('Login successful! Redirecting...')
+      // Set redirecting state to keep spinner going
+      setIsRedirecting(true);
       // Handle redirect on client side - use custom redirect if available
       if (redirectUrl) {
         router.push(redirectUrl);
       } else if (data?.redirectPath) {
         router.push(data.redirectPath);
+      } else {
+        router.push('/dashboard');
       }
     },
     onError: (error) => {
-      setSnackbar({
-        open: true,
-        message: error.message || 'An error occurred',
-        severity: 'error'
-      });
+      // Handle different types of errors with appropriate toast messages
+      if (error.message.includes('Invalid login credentials')) {
+        toast.error('Invalid email or password. Please try again.')
+      } else if (error.message.includes('User account not found')) {
+        toast.error('Account not found. Please contact support.')
+      } else if (error.message.includes('Unexpected token')) {
+        toast.error('Server error. Please try again later.')
+      } else if (error.message.includes('Network') || error.message.includes('fetch')) {
+        toast.error('Network error. Please check your connection.')
+      } else {
+        toast.error(error.message || 'An error occurred while signing in')
+      }
     },
   })
   
@@ -108,10 +110,6 @@ export function SignInView() {
   //   }
   // }, []);
   
-  const handleCloseSnackbar = useCallback(() => {
-    setSnackbar(prev => ({ ...prev, open: false }));
-  }, []);
-
   const renderForm = (
     <Box
       component="form"
@@ -164,10 +162,10 @@ export function SignInView() {
         type="submit"
         color="inherit"
         variant="contained"
-        disabled={loginMutation.isPending}
-        startIcon={loginMutation.isPending ? <CircularProgress size={20} color="inherit" /> : null}
+        disabled={loginMutation.isPending || isRedirecting}
+        startIcon={(loginMutation.isPending || isRedirecting) ? <CircularProgress size={20} color="inherit" /> : null}
       >
-        {loginMutation.isPending ? 'Signing in...' : 'Sign in'}
+        {(loginMutation.isPending || isRedirecting) ? 'Signing in...' : 'Sign in'}
       </Button>
     </Box>
   );
@@ -212,17 +210,6 @@ export function SignInView() {
           <Iconify width={22} icon="socials:twitter" />
         </IconButton>
       </Box>
-      
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
     </>
   );
 }

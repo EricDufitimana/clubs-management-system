@@ -9,7 +9,7 @@ import FormControl from '@mui/material/FormControl';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 
 // ----------------------------------------------------------------------
 

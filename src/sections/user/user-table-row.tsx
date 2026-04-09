@@ -14,10 +14,10 @@ import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 import MenuItem, { menuItemClasses } from '@mui/material/MenuItem';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
+import { Label } from '@/components/label';
+import { Iconify } from '@/components/iconify';
 
-import { getGradeColor, formatCombination, getCombinationColor } from 'src/sections/user/utils/colors';
+import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/user/utils/colors';
 
 // ----------------------------------------------------------------------
 

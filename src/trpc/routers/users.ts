@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, adminProcedure } from "../init";
+import { createTRPCRouter, adminProcedure, superAdminProcedure } from "../init";
 import { prisma } from "@/lib/prisma";
 import { getAvatarUrl } from "@/utils/get-avatar";
 import { TRPCError } from "@trpc/server";
@@ -72,15 +72,17 @@ export const usersRouter = createTRPCRouter({
             }
         });
 
-        // Map to UserProps structure
-        return Array.from(studentMap.values()).map(({ student, clubName, status }) => {
+        // Map to UserProps structure (only active members)
+        return Array.from(studentMap.values())
+            .filter(({ status }) => status === 'active')
+            .map(({ student, clubName }) => {
             const avatarUrl = getAvatarUrl(student.gender || undefined, student.id);
             
             return {
                 id: student.id.toString(),
                 name: `${student.first_name} ${student.last_name}`,
                 role: student.grade ? String(student.grade) : undefined,
-                status,
+                status: 'active' as const,
                 company: student.combination ? String(student.combination) : undefined,
                 avatarUrl,
                 isVerified: false,
@@ -98,14 +100,17 @@ export const usersRouter = createTRPCRouter({
                     select: {
                         id: true,
                         club_name: true,
+                        category: true,
                     }
                 }
             }
         });
 
-        // Map students to clubs
+        // Map students to their clubs (both subject-oriented and soft-oriented)
         const studentMap = new Map<string, {
             student: NonNullable<typeof allMembers[0]['student']>;
+            subjectOrientedClub?: string;
+            softOrientedClub?: string;
             clubName: string;
             status: 'active' | 'left';
         }>();
@@ -115,36 +120,51 @@ export const usersRouter = createTRPCRouter({
             
             const studentIdStr = member.student.id.toString();
             const clubName = member.club?.club_name || '';
+            const clubCategory = member.club?.category;
             
-            // Map student to club name (if multiple clubs, keep the first one found)
+            // Initialize student entry if not exists
             if (!studentMap.has(studentIdStr)) {
                 studentMap.set(studentIdStr, {
                     student: member.student,
+                    subjectOrientedClub: undefined,
+                    softOrientedClub: undefined,
                     clubName,
                     status: member.membership_status,
                 });
-            } else {
-                // Update if current membership is active (prefer active status)
-                const existing = studentMap.get(studentIdStr)!;
-                if (member.membership_status === 'active') {
-                    existing.status = 'active';
-                }
+            }
+            
+            const studentEntry = studentMap.get(studentIdStr)!;
+            
+            // Update club based on category
+            if (clubCategory === 'subject_oriented_clubs') {
+                studentEntry.subjectOrientedClub = clubName;
+            } else if (clubCategory === 'soft_skills_oriented_clubs') {
+                studentEntry.softOrientedClub = clubName;
+            }
+            
+            // Update status (prefer active status)
+            if (member.membership_status === 'active') {
+                studentEntry.status = 'active';
             }
         });
 
-        // Map to UserProps structure
-        return Array.from(studentMap.values()).map(({ student, clubName, status }) => {
+        // Map to UserProps structure (only active members)
+        return Array.from(studentMap.values())
+            .filter(({ status }) => status === 'active')
+            .map(({ student, subjectOrientedClub, softOrientedClub, clubName }) => {
             const avatarUrl = getAvatarUrl(student.gender || undefined, student.id);
             
             return {
                 id: student.id.toString(),
                 name: `${student.first_name} ${student.last_name}`,
                 role: student.grade ? String(student.grade) : undefined,
-                status,
+                status: 'active' as const,
                 company: student.combination ? String(student.combination) : undefined,
                 avatarUrl,
                 isVerified: false,
                 club_name: clubName || null,
+                subject_oriented_club: subjectOrientedClub || null,
+                soft_oriented_club: softOrientedClub || null,
             };
         });
     }),
@@ -180,6 +200,11 @@ export const usersRouter = createTRPCRouter({
             },
             include: {
                 student: true,
+                club: {
+                    select: {
+                        club_name: true,
+                    }
+                }
             },
             orderBy: {
                 left_at: 'desc',
@@ -203,6 +228,7 @@ export const usersRouter = createTRPCRouter({
                     avatarUrl,
                     joined_at: member.joined_at.toISOString(),
                     left_at: member.left_at?.toISOString() || '',
+                    clubName: member.club?.club_name || 'Unknown Club',
                 };
             });
     }),
@@ -245,6 +271,49 @@ export const usersRouter = createTRPCRouter({
                 throw new TRPCError({
                     code: 'INTERNAL_SERVER_ERROR',
                     message: 'Failed to mark members as left',
+                });
+            }
+        }),
+
+    markMemberAsLeftFromClub: superAdminProcedure
+        .input(z.object({
+            memberId: z.string(),
+            clubId: z.string(),
+        }))
+        .mutation(async ({ input }) => {
+            const { memberId, clubId } = input;
+
+            try {
+                // Update the specific club member to mark as left
+                const result = await prisma.clubMember.updateMany({
+                    where: {
+                        student_id: BigInt(memberId),
+                        club_id: BigInt(clubId),
+                        membership_status: 'active',
+                    },
+                    data: {
+                        membership_status: 'left',
+                        left_at: new Date(),
+                    },
+                });
+
+                if (result.count === 0) {
+                    throw new TRPCError({
+                        code: 'NOT_FOUND',
+                        message: 'Member not found in this club',
+                    });
+                }
+
+                return {
+                    success: true,
+                    message: 'Member marked as left from the club',
+                };
+            } catch (error) {
+                console.error('[MARK_MEMBER_AS_LEFT_FROM_CLUB] Error:', error);
+                if (error instanceof TRPCError) throw error;
+                throw new TRPCError({
+                    code: 'INTERNAL_SERVER_ERROR',
+                    message: 'Failed to mark member as left from club',
                 });
             }
         }),
