@@ -2,7 +2,7 @@
 
 import Fab from '@mui/material/Fab';
 
-import { Iconify } from 'src/components/iconify';
+import { Iconify } from '@/components/iconify';
 
 // ----------------------------------------------------------------------
 

@@ -1,5 +1,5 @@
 
-import Signin from "@/app/components/auth/sign-in";
+import Signin from "../../../components/auth/sign-in/index";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {

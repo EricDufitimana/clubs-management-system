@@ -133,10 +133,10 @@ const WaitlistPage = () => {
         const missingFields = [];
         if (!formData.fullName || formData.fullName.trim() === '') missingFields.push('Full name');
         if (!formData.email || formData.email.trim() === '') missingFields.push('Email');
-        if (!formData.role || formData.role === '') missingFields.push('Role');
+        if (!formData.role) missingFields.push('Role');
         if (!formData.schoolOrganization || formData.schoolOrganization.trim() === '') missingFields.push('School/Organization');
         if (!formData.country || formData.country.trim() === '') missingFields.push('Country');
-        if (!formData.currentMethod || formData.currentMethod === '') missingFields.push('Current method');
+        if (!formData.currentMethod) missingFields.push('Current method');
         if (!selectedPaymentOption) missingFields.push('Payment option');
 
         if (missingFields.length > 0) {
@@ -552,7 +552,7 @@ const WaitlistPage = () => {
                                                                     ? 'border-purple_blue bg-purple_blue/5'
                                                                     : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-black/50 hover:bg-gray-50 dark:hover:bg-white/5'
                                                             }`}
-                                                            onClick={() => setSelectedPaymentOption(option.value)}
+                                                            onClick={() => setSelectedPaymentOption(option.value as '' | 'yes' | 'maybe' | 'no')}
                                                         >
                                                             <span
                                                                 className={`w-2 h-2 rounded-full border-1.5px flex-shrink-0 transition-colors ${

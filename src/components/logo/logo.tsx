@@ -8,7 +8,7 @@ import { mergeClasses } from 'minimal-shared/utils';
 import Link from '@mui/material/Link';
 import { styled, useTheme } from '@mui/material/styles';
 
-import { RouterLink } from 'src/routes/components';
+import { RouterLink } from '@/routes/components';
 
 import { logoClasses } from './classes';
 

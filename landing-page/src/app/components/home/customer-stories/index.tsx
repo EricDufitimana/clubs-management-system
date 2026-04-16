@@ -1,6 +1,6 @@
 "use client"
 import Image from 'next/image'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 import { motion, useInView } from 'motion/react'
 import { useRef } from 'react'
 

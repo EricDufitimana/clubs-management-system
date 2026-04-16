@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'motion/react'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 
 function OnlinePresence() {
   const ref = useRef(null)

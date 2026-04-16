@@ -1,6 +1,6 @@
 
-import ContactForm from "@/app/components/contact-form";
-import Faq from "@/app/components/home/faq";
+import ContactForm from "../../components/contact-form/index";
+import Faq from "../../components/home/faq/index";
 import { Metadata } from "next";
 export const metadata: Metadata = {
     title: "Contact | Awake Agency",

@@ -4,7 +4,7 @@ import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import StarRating from '../../shared/star-rating'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 
 function HeroSection() {
   const ref = useRef(null)

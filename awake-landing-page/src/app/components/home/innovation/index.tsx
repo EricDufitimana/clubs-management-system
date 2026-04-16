@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import React, { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'motion/react'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 
 function Innovation() {
   const ref = useRef(null)

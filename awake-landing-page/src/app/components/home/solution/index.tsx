@@ -2,7 +2,7 @@
 import Link from 'next/link'
 import { useRef } from 'react'
 import { motion, useInView } from 'motion/react'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 
 function Solutions() {
   const ref = useRef(null)

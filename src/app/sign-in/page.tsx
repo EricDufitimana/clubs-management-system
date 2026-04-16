@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { CONFIG } from 'src/config-global';
-import { AuthLayout } from 'src/layouts/auth';
+import { CONFIG } from '@/config-global';
+import { AuthLayout } from '@/layouts/auth';
 
-import { SignInView } from 'src/sections/auth';
+import { SignInView } from '@/sections/auth';
 
 // ----------------------------------------------------------------------
 

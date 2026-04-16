@@ -2,7 +2,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react';
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect';
+import { TextGenerateEffect } from '../../ui/text-generate-effect';
 
 function Subscription() {
   const [startupPlanList, setstartupPlanList] = useState<any>(null);

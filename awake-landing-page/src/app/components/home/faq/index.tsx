@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../../ui/accordion';
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect';
+import { TextGenerateEffect } from '../../ui/text-generate-effect';
 
 function Faq() {
   const [faqList, setfaqList] = useState<any>(null);

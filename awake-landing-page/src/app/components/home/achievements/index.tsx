@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion, useInView } from 'motion/react'
 import SingleAchievement from './SingleAchievement'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 
 function Achievements() {
   const ref = useRef(null)

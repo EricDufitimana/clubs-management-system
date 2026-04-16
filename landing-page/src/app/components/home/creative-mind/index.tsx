@@ -2,7 +2,7 @@
 import { motion, useInView } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 import SingleCreativeMind from './SingleCreativeMind'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 
 function CreativeMind() {
   const ref = useRef(null)

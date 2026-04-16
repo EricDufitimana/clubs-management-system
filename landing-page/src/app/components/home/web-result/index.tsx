@@ -3,7 +3,7 @@ import Image from 'next/image'
 import CountUp from 'react-countup'
 import { useInView } from 'react-intersection-observer'
 import { useEffect, useState } from 'react'
-import { TextGenerateEffect } from '@/app/components/ui/text-generate-effect'
+import { TextGenerateEffect } from '../../ui/text-generate-effect'
 
 function WebResult() {
   const [data, setData] = useState<any>(null);
