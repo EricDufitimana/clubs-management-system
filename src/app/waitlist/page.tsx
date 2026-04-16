@@ -253,7 +253,8 @@ const WaitlistPage = () => {
                     <div className='flex justify-center'>
                         <div className='w-full max-w-5xl grid grid-cols-1 lg:grid-cols-[1fr_1.4fr] min-h-[600px] gap-0 border-0.5px border-gray-200 dark:border-gray-700 rounded-2xl overflow-hidden bg-white dark:bg-black/40 backdrop-blur-xl'>
                             {/* Left Panel */}
-                            <div className='p-12 lg:p-10 bg-slate-200 dark:bg-black/60 flex flex-col gap-8'>
+                            <div className='p-12 lg:p-10 bg-slate-200 dark:bg-black/60 flex flex-col gap-8 relative'>
+                                <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-black bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
                                 <div>
                                     <div className='inline-flex items-center gap-2 text-xs font-medium tracking-wider text-slate-700 border border-slate-300 rounded-full px-3 py-1 w-fit'>
                                         <span className='w-1.5 h-1.5 rounded-full bg-green-500'></span>
