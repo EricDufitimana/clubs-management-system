@@ -105,12 +105,12 @@ export function getCombinationColor(combination?: string | null): LabelColor {
   const combinationColorMap: Record<string, LabelColor> = {
     'mathematics-physics-computer science': 'primary',
     'history-geography-literature-psychology': 'success',
-    'mathematics-physics-geography-economics': 'default',
+    'mathematics-physics-geography-economics': 'secondary',
     'mathematics-physics-chemistry-biology': 'info',
-    'mathematics-economics-geography': 'secondary',
-    'mathematics-computer science-economics': 'primary', // Reusing primary, but different from MPC
-    'physics-chemistry-biology': 'success', // Reusing success, but different from HGLP
-    'history-geography-literature': 'info', // Reusing info, but different from MPCB
+    'mathematics-economics-geography': 'primary',
+    'mathematics-computer science-economics': 'success', // Reusing success, but different from HGLP
+    'physics-chemistry-biology': 'info', // Reusing info, but different from MPCB
+    'history-geography-literature': 'secondary', // Reusing secondary, but different from MEG
   };
   
   // Check exact match first
@@ -126,7 +126,7 @@ export function getCombinationColor(combination?: string | null): LabelColor {
   }
   
   // Distribute across only non-red/orange colors
-  const colors: LabelColor[] = ['primary', 'success', 'default', 'info', 'secondary'];
+  const colors: LabelColor[] = ['primary', 'success', 'info', 'secondary'];
   return colors[Math.abs(hash) % colors.length];
 }
 

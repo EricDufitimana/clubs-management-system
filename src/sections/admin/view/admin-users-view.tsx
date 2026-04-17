@@ -34,6 +34,7 @@ import { MemberTableHead } from '@/sections/member/member-table-head';
 import { TableEmptyRows } from '@/sections/member/table-empty-rows';
 import { MemberTableToolbar } from '@/sections/member/member-table-toolbar';
 import { emptyRows, applyFilter, getComparator } from '@/sections/member/utils';
+import { getGradeColor, formatCombination, getCombinationColor } from '@/sections/member/utils/colors';
 
 import { useTable } from './use-table';
 import { AddMemberDialog } from '../components/add-member-dialog';
@@ -278,8 +279,28 @@ export function AdminUsersView() {
                           {row.name}
                         </Box>
                       </TableCell>
-                      <TableCell>{row.company}</TableCell>
-                      <TableCell>{row.role}</TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                          {row.company && row.company !== '-' ? (
+                            <Label color={getCombinationColor(row.company)} variant="soft">
+                              {formatCombination(row.company)}
+                            </Label>
+                          ) : (
+                            '-'
+                          )}
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          {row.role && row.role !== '-' ? (
+                            <Label color={getGradeColor(row.role)} variant="soft">
+                              {row.role}
+                            </Label>
+                          ) : (
+                            '-'
+                          )}
+                        </Box>
+                      </TableCell>
                       <TableCell>
                         <Label color="success">Active</Label>
                       </TableCell>
