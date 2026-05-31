@@ -3,6 +3,8 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState } from 'react';
 
+import Link from 'next/link';
+
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
@@ -207,14 +209,25 @@ export function SuperAdminReportsView() {
             High-level insights into club performance across the platform.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          color="inherit"
-          startIcon={isExporting ? <Loader2 className='animate-spin ' />: <Iconify icon="mingcute:download-2-line" />}
-          onClick={handleExportStudents}
-        >
-          Export Students
-        </Button>
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <Button
+            component={Link}
+            href="/dashboard/super-admin/no-attendance"
+            variant="outlined"
+            color="error"
+            startIcon={<Iconify icon="solar:user-cross-bold-duotone" />}
+          >
+            No Attendance This Week
+          </Button>
+          <Button
+            variant="contained"
+            color="inherit"
+            startIcon={isExporting ? <Loader2 className='animate-spin ' /> : <Iconify icon="mingcute:download-2-line" />}
+            onClick={handleExportStudents}
+          >
+            Export Students
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>

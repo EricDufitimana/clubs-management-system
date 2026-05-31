@@ -1,7 +1,8 @@
 import { z } from 'zod';
-import { createTRPCRouter, adminProcedure } from '../init';
+import { createTRPCRouter, adminProcedure, superAdminProcedure } from '../init';
 import { prisma } from '@/lib/prisma';
 import { TRPCError } from '@trpc/server';
+import { getAvatarUrl } from '@/utils/get-avatar';
 
 export const studentsRouter = createTRPCRouter({
   /**
@@ -178,6 +179,123 @@ export const studentsRouter = createTRPCRouter({
         });
       }
     }),
+
+  /**
+   * Get all active students (excluding Senior 6) who were NOT marked present this week.
+   * When `category` is provided the search is scoped to sessions and memberships of that
+   * club category only (subject_oriented_clubs | soft_skills_oriented_clubs).
+   */
+  getStudentsWithoutAttendanceThisWeek: superAdminProcedure
+    .input(
+      z.object({
+        category: z.enum(['subject_oriented_clubs', 'soft_skills_oriented_clubs']).optional(),
+        weekStart: z.string().optional(), // ISO string for the Monday of the target week
+      }).optional()
+    )
+    .query(async ({ input }) => {
+    try {
+      const category = input?.category ?? null;
+
+      // Resolve week boundaries
+      let monday: Date;
+      if (input?.weekStart) {
+        monday = new Date(input.weekStart);
+        monday.setHours(0, 0, 0, 0);
+      } else {
+        const now = new Date();
+        const dayOfWeek = now.getDay();
+        monday = new Date(now);
+        monday.setDate(now.getDate() - (dayOfWeek === 0 ? 6 : dayOfWeek - 1));
+        monday.setHours(0, 0, 0, 0);
+      }
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+
+      // Sessions this week, optionally scoped to a club category
+      const sessionsThisWeek = await prisma.session.findMany({
+        where: {
+          date: { gte: monday, lte: sunday },
+          ...(category ? { club: { category } } : {}),
+        },
+        select: { id: true },
+      });
+
+      const sessionIds = sessionsThisWeek.map((s) => s.id);
+
+      // Students who were present in those sessions
+      const presentStudentIds = sessionIds.length > 0
+        ? (await prisma.attendance.findMany({
+            where: {
+              session_id: { in: sessionIds },
+              attendance_status: 'present',
+            },
+            select: { student_id: true },
+            distinct: ['student_id'],
+          })).map((a) => a.student_id)
+        : [];
+
+      // Active members, optionally scoped to a category
+      const activeMembers = await prisma.clubMember.findMany({
+        where: {
+          membership_status: 'active',
+          ...(category ? { club: { category } } : {}),
+        },
+        include: {
+          student: true,
+          club: { select: { id: true, club_name: true, category: true } },
+        },
+      });
+
+      // Deduplicate by student, aggregate clubs
+      const studentMap = new Map<string, {
+        id: string;
+        first_name: string;
+        last_name: string;
+        grade: string | null;
+        combination: string | null;
+        gender: string | null;
+        avatarUrl: string;
+        clubs: { name: string; category: string | null }[];
+      }>();
+
+      for (const member of activeMembers) {
+        if (!member.student) continue;
+        const s = member.student;
+        if (s.grade === 'Senior6') continue;
+
+        const key = s.id.toString();
+        if (!studentMap.has(key)) {
+          studentMap.set(key, {
+            id: key,
+            first_name: s.first_name,
+            last_name: s.last_name,
+            grade: s.grade ?? null,
+            combination: s.combination ?? null,
+            gender: s.gender ?? null,
+            avatarUrl: getAvatarUrl(s.gender ?? undefined, s.id),
+            clubs: [],
+          });
+        }
+        const entry = studentMap.get(key)!;
+        if (member.club && !entry.clubs.find((c) => c.name === member.club!.club_name)) {
+          entry.clubs.push({ name: member.club.club_name, category: member.club.category ?? null });
+        }
+      }
+
+      const presentSet = new Set(presentStudentIds.map((id) => id.toString()));
+
+      return Array.from(studentMap.values())
+        .filter((s) => !presentSet.has(s.id))
+        .sort((a, b) => a.last_name.localeCompare(b.last_name));
+    } catch (error: any) {
+      console.error('[STUDENTS] Error fetching students without attendance:', error);
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error?.message || 'Failed to fetch students without attendance',
+      });
+    }
+  }),
 
   /**
    * Delete multiple members from a club (bulk delete)
