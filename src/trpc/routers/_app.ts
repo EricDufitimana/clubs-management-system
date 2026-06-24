@@ -10,6 +10,7 @@ import { sessionsRouter } from './sessions';
 import { inngestRouter } from './inngest';
 import { contactRouter } from './contact';
 import { superAdminInvitesRouter } from './superAdminInvites';
+import { clubsAssistantRouter } from './clubs-assistant';
 
 export const appRouter = createTRPCRouter({
   inngest: inngestRouter,
@@ -22,6 +23,7 @@ export const appRouter = createTRPCRouter({
   sessions: sessionsRouter,
   contact: contactRouter,
   superAdminInvites: superAdminInvitesRouter,
+  clubsAssistant: clubsAssistantRouter,
 });
 
 // export type definition of API

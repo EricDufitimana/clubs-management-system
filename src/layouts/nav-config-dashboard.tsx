@@ -36,6 +36,11 @@ export const adminNavItems: NavItem[] = [
     path: '/dashboard/admin/attendance',
     icon: <Icon icon="solar:clipboard-check-bold" width={24} height={24} />,
   },
+  {
+    title: 'AI Assistant',
+    path: '/dashboard/ai-assistant',
+    icon: <Icon icon="solar:stars-bold-duotone" width={24} height={24} />,
+  },
 ];
 
 // Super admin navigation items
@@ -64,6 +69,11 @@ export const superAdminNavItems: NavItem[] = [
     title: 'Reports',
     path: '/dashboard/super-admin/reports',
     icon: <Icon icon="solar:chart-square-bold-duotone" width={24} height={24} />,
+  },
+  {
+    title: 'AI Assistant',
+    path: '/dashboard/ai-assistant',
+    icon: <Icon icon="solar:stars-bold-duotone" width={24} height={24} />,
   },
 ];
 
